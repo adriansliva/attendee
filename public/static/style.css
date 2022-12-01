@@ -1,0 +1,12 @@
+.dropdownItemQ{
+    color: black;
+    border: solid 1px gray;
+}
+.dropdownItemsQ{
+    border: solid 2px black;
+}
+
+.dropdownBarQ{
+    justify-content: center;
+    display: flex;
+}
