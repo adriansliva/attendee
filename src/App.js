@@ -42,15 +42,22 @@ function App() {
     }
   }
 
-
-  useEffect(()=>{
+  const getData = () => {
     fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/`)
       .then((response) => response.json())
       .then((actualData) => setData(actualData));
+  };
 
+  const getLessons = () => {
     fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons`)
       .then((response) => response.json())
       .then((actualData) => setLessonsData(actualData));
+  };
+
+
+  useEffect(()=>{
+    getData();
+    getLessons();
   }, []);
 
   useEffect(()=>{
@@ -228,16 +235,15 @@ function App() {
   },[date]);
 
   return <>
-  <div className="dropdownBarQ">
-    <Dropdown selected = {building && building.label} defaultLabel = {"Building"} options = {buildingList} onChange = {setBuilding}/>
-    <Dropdown selected = {room && room.label} defaultLabel = {"Room"} options = {roomList} onChange = {setRoom}/>
-    <Dropdown selected = {lesson && lesson.label} defaultLabel = {"Lesson"} options = {lessonList} onChange = {setLesson}/>
-    <Dropdown selected = {date && date.label} defaultLabel = {"Date"} options = {dateList} onChange = {setDate}/>
+    <div className="dropdownBarQ">
+      <Dropdown selected = {building && building.label} defaultLabel = {"Building"} options = {buildingList} onChange = {setBuilding}/>
+      <Dropdown selected = {room && room.label} defaultLabel = {"Room"} options = {roomList} onChange = {setRoom}/>
+      <Dropdown selected = {lesson && lesson.label} defaultLabel = {"Lesson"} options = {lessonList} onChange = {setLesson}/>
+      <Dropdown selected = {date && date.label} defaultLabel = {"Date"} options = {dateList} onChange = {setDate}/>
     </div>
     {series && options &&
       <ReactApexChart options={options} series={series} type="line" height={350} />
     }
-    
   </>
 }
 

@@ -1,6 +1,7 @@
 .dropdownItemQ{
     color: black;
     border: solid 1px gray;
+    cursor: pointer;
 }
 .dropdownItemsQ{
     border: solid 2px black;
