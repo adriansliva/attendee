@@ -1,250 +1,337 @@
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
 import ReactApexChart from 'react-apexcharts'
 import 'react-dropdown/style.css';
 import Dropdown from './components/Dropdown';
 
 function App() {
 
-  const [data, setData] = useState();
-  const [lessonsData, setLessonsData] = useState();
+    const [data, setData] = useState();
+    const [lessonsData, setLessonsData] = useState();
 
-  const [buildingList, setBuildingList] = useState([]);
-  const [roomList, setRoomList] = useState([]);
-  const [lessonList, setLessonList] = useState([]);
-  const [dateList, setDateList] = useState([]);
+    const [buildingList, setBuildingList] = useState([]);
+    const [roomList, setRoomList] = useState([]);
+    const [lessonList, setLessonList] = useState([]);
+    const [dateList, setDateList] = useState([]);
 
-  const [building, setBuilding] = useState();
-  const [room, setRoom] = useState();
-  const [lesson, setLesson] = useState();
-  const [date, setDate] = useState();
+    const [buildings, setBuildings] = useState([]);
+    const [rooms, setRooms] = useState([]);
+    const [lessons, setLessons] = useState([]);
+    const [dates, setDates] = useState([]);
+    const [buildingDates, setBuildingDates] = useState([]);
+    const [roomDates, setRoomDates] = useState([]);
+    const [lessonDates, setLessonDates] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
 
-  const [series, setSeries] = useState();
-  const [options, setOptions] = useState();
+    const [test, setTest] = useState();
 
-  const getDayName = (day) => {
-    switch (day) {
-      case 0:
-        return "Sunday";
-      case 1:
-        return "Monday";
-      case 2:
-        return "Tuesday";
-      case 3:
-        return "Wednesday";
-      case 4:
-        return "Thursday";
-      case 5:
-        return "Friday";
-      case 6:
-        return "Saturday";
-      default:
-        console.log('day not defined')
+    const [building, setBuilding] = useState();
+    const [room, setRoom] = useState();
+    const [lesson, setLesson] = useState();
+    const [date, setDate] = useState();
+
+    const [series, setSeries] = useState();
+    const [options, setOptions] = useState();
+
+    const getDayName = (day) => {
+        switch (day) {
+            case 0:
+                return "Sunday";
+            case 1:
+                return "Monday";
+            case 2:
+                return "Tuesday";
+            case 3:
+                return "Wednesday";
+            case 4:
+                return "Thursday";
+            case 5:
+                return "Friday";
+            case 6:
+                return "Saturday";
+            default:
+                console.log('day not defined')
+        }
     }
-  }
 
-  const getData = () => {
-    fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/`)
-      .then((response) => response.json())
-      .then((actualData) => setData(actualData));
-  };
+    const getData = () => {
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/`)
+            .then((response) => response.json())
+            .then((actualData) => setData(actualData));
+    };
 
-  const getLessons = () => {
-    fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons`)
-      .then((response) => response.json())
-      .then((actualData) => setLessonsData(actualData));
-  };
+    const getBuildings = () => {
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings`)
+            .then((response) => response.json())
+            .then((actualData) => setBuildings(actualData));
+    };
 
+    const getLessons = () => {
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons`)
+            .then((response) => response.json())
+            .then((actualData) => setLessonsData(actualData));
+    };
 
-  useEffect(()=>{
-    getData();
-    getLessons();
-  }, []);
-
-  useEffect(()=>{
-    if(data){
-      data.sort(function(x, y){
-        return x.sample_time - y.sample_time;
-      });
-
-      var buildings = []
-
-      data.forEach(element => {
-        const building = element.device_data.building;
-        if(buildings.indexOf(building) === -1) {
-          buildings.push(building);
+    const updateFilteredData = () => {
+        if (!date) {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = today.getFullYear();
         }
-      });
 
-      var buildingOptions = []
+        // console.log(building);
+        // console.log(room);
 
-      buildings.forEach(building => {
-        const option = {label: building, value: building};
-        buildingOptions.push(option);
-      });
-
-      setBuildingList(buildingOptions);
-
+        if (building && !room && !lesson) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${building.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setFilteredData(actualData));
+        } else if (room && building && !lesson) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${room.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setFilteredData(actualData));
+        } else if (lesson && building && room) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${room.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setFilteredData(actualData));
+        } else {
+            setFilteredData([]);
+        }
     }
-  },[data]);
 
-  useEffect(()=>{
-    setRoom(null);
-    setLesson(null);
-    setDate(null);
-    setRoomList([]);
-    setLessonList([]);
-    setDateList([]);
-    if(building){
-      var rooms = []
+    useEffect(() => {
+        getData();
+        getLessons();
+        getBuildings();
+    }, []);
 
-      data.forEach(element => {
-        const room = element.device_data.room;
-        if(rooms.indexOf(room) === -1 && element.device_data.building == building.value) {
-          rooms.push(room);
+    useEffect(() => {
+        if (buildings) {
+            var buildingOptions = []
+
+            buildings.forEach(building => {
+                const option = {label: building, value: building};
+                buildingOptions.push(option);
+            });
+
+            setBuildingList(buildingOptions);
         }
-      });
+    }, [buildings]);
 
-      var roomOptions = []
-
-      rooms.forEach(room => {
-        const option = {label: room, value: room};
-        roomOptions.push(option);
-      });
-
-      setRoomList(roomOptions);
-    }
-  },[building]);
-
-  useEffect(()=>{
-    setLesson(null);
-    setDate(null);
-    setLessonList([]);
-    setDateList([]);
-    if(room){
-      var lessons = []
-
-      lessonsData.forEach(element => {
-        const lesson = {name:element.name, day: element.day, start_time: element.start_time, end_time:element.end_time}
-        if(element.building == building.value && element.room == room.value) {
-          lessons.push(lesson);
+    useEffect(() => {
+        if(!room){
+          setDate(null);
+          if(!date) updateFilteredData();
         }
-      });
+        setBuildingDates([]);
+        setDates([]);
+        setRooms([]);
+        setRoom(null);
+        if (building) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/rooms/${building.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setRooms(actualData));
 
-      var lessonOptions = []
-
-      lessons.forEach(lesson => {
-        const option = {label: `${lesson.name} ${lesson.day} ${lesson.start_time}-${lesson.end_time}`, value: lesson};
-        lessonOptions.push(option);
-      });
-
-      setLessonList(lessonOptions);
-    }
-  },[room]);
-
-  useEffect(()=>{
-    setDate(null);
-    setDateList([]);
-    if(lesson){
-      var dates = []
-
-      data.forEach(element => {
-        const date = new Date(element.sample_time);
-        const dateObject = {
-          year: date.getFullYear(),
-          month: date.getMonth()+1,
-          day: date.getDate()
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/dates/${building.value}`)
+                .then((response) => response.json())
+                .then((actualData) => {
+                    setDates(actualData);
+                    setBuildingDates(actualData)
+                });
         }
+    }, [building]);
 
-        if(JSON.stringify(dates[dates.length - 1]) != JSON.stringify(dateObject) && element.device_data.building == building.value && element.device_data.room == room.value && getDayName(date.getDay()) == lesson.value.day) {
-          dates.push(dateObject);
+    useEffect(() => {
+        if (rooms) {
+            var roomOptions = []
+
+            rooms.forEach(room => {
+                const option = {label: room, value: room};
+                roomOptions.push(option);
+            });
+
+            setRoomList(roomOptions);
         }
-      });
+    }, [rooms]);
 
-      var datesOptions = []
+    useEffect(() => {
+        if (dates) {
+            var datesOptions = []
 
-      dates.forEach(date => {
-        const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
-        datesOptions.push(option);
-      });
+            dates.forEach(date => {
+                const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
+                datesOptions.push(option);
+            });
 
-      setDateList(datesOptions);
-    }
-  },[lesson]);
-
-  useEffect(()=>{
-    if(date){
-
-      const diff_ins = []
-      const diff_outs = []
-      const times = []
-
-      const start_date = new Date(`${date.value.year}-${date.value.month}-${date.value.day} ${lesson.value.start_time}`)
-      const end_date = new Date(`${date.value.year}-${date.value.month}-${date.value.day} ${lesson.value.end_time}`)
-
-      data.forEach(element => {
-        const date = new Date(element.sample_time);
-        if(date >= start_date && date <= end_date){
-          diff_ins.push(element.device_data.diff_in);
-          diff_outs.push(element.device_data.diff_out);
-          const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
-          times.push(time);
+            setDateList(datesOptions);
         }
-      });
+    }, [dates]);
 
-      setSeries([{
-        name: "Diff_in",
-        data: diff_ins
-      },
-      {
-        name: "Diff_out",
-        data: diff_outs
+    useEffect(() => {
+        updateFilteredData();
+    }, [date]);
+
+    useEffect(() => {
+      if(!lesson){
+        setDate(null);
+        if(!date) updateFilteredData();
       }
-    ])
-    setOptions({
-      chart: {
-        height: 350,
-        type: 'line',
-        zoom: {
-          enabled: false
-        }
-      },
-      dataLabels: {
-        enabled: false
-      },
-      stroke: {
-        curve: 'straight'
-      },
-      title: {
-        text: 'Attendee',
-        align: 'left'
-      },
-      grid: {
-        row: {
-          colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
-          opacity: 0.5
-        },
-      },
-      xaxis: {
-        categories: times,
-      }
-    });
-    }else{
-      setSeries(null);
-      setOptions(null);
-    }
-  },[date]);
+      setRoomDates([]);
+      if(building) setDates(buildingDates);
+      setLessons([]);
+      setLesson(null);
+      if (room) {
+          fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/dates/${room.value}`)
+              .then((response) => response.json())
+              .then((actualData) => {
+                  setDates(actualData);
+                  setRoomDates(actualData)
+              });
 
-  return <>
-    <div className="dropdownBarQ">
-      <Dropdown selected = {building && building.label} defaultLabel = {"Building"} options = {buildingList} onChange = {setBuilding}/>
-      <Dropdown selected = {room && room.label} defaultLabel = {"Room"} options = {roomList} onChange = {setRoom}/>
-      <Dropdown selected = {lesson && lesson.label} defaultLabel = {"Lesson"} options = {lessonList} onChange = {setLesson}/>
-      <Dropdown selected = {date && date.label} defaultLabel = {"Date"} options = {dateList} onChange = {setDate}/>
-    </div>
-    {series && options &&
-      <ReactApexChart options={options} series={series} type="line" height={350} />
-    }
-  </>
+          fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons/${room.value}`)
+              .then((response) => response.json())
+              .then((actualData) => setLessons(actualData));
+      }
+    }, [room]);
+
+    useEffect(() => {
+        setDate(null);
+        if(!date) updateFilteredData();
+        if(room) setDates(roomDates);
+        if (lesson) {
+            // var dates = []
+            //
+            // data.forEach(element => {
+            //     const date = new Date(element.sample_time);
+            //     const dateObject = {
+            //         year: date.getFullYear(),
+            //         month: date.getMonth() + 1,
+            //         day: date.getDate()
+            //     }
+            //
+            //     if (JSON.stringify(dates[dates.length - 1]) !== JSON.stringify(dateObject) && element.device_data.building === building.value && element.device_data.room === room.value && getDayName(date.getDay()) === lesson.value.day) {
+            //         dates.push(dateObject);
+            //     }
+            // });
+            //
+            // var datesOptions = []
+            //
+            // dates.forEach(date => {
+            //     const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
+            //     datesOptions.push(option);
+            // });
+            //
+            // setDateList(datesOptions);
+        }
+    }, [lesson]);
+
+    useEffect(() => {
+        if (lessons) {
+            var lessonOptions = []
+
+            lessons.forEach(lesson => {
+                const option = {
+                    label: `${lesson.name} ${lesson.day} ${lesson.start_time}-${lesson.end_time}`,
+                    value: lesson
+                };
+                lessonOptions.push(option);
+            });
+            setLessonList(lessonOptions);
+        }
+    }, [lessons]);
+
+    useEffect(() => {
+        if (filteredData.length !== 0) {
+            const counts = []
+            var count = 0
+            const times = []
+            filteredData.forEach(element => {
+                const date = new Date(element.sample_time);
+                count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                counts.push(count);
+                const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+                times.push(time);
+            });
+
+            setSeries([{
+                name: "Count",
+                data: counts
+            }
+            ])
+            setOptions({
+                chart: {
+                    height: 350,
+                    type: 'line',
+                    zoom: {
+                        enabled: false
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    curve: 'straight'
+                },
+                title: {
+                    text: 'Attendee',
+                    align: 'left'
+                },
+                grid: {
+                    row: {
+                        colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
+                        opacity: 0.5
+                    },
+                },
+                xaxis: {
+                    categories: times,
+                }
+            });
+        } else {
+            setSeries(null);
+            setOptions(null);
+        }
+    }, [filteredData]);
+
+    return <>
+        <div className="navbarLabels">
+            <ul className="liNavbarLabels">
+                <li className="liNavbarLabels"><b>Building</b></li>
+                <li className="liNavbarLabels"><b>Room</b></li>
+                <li className="liNavbarLabels"><b>Lesson</b></li>
+                <li className="liNavbarLabels"><b>Date</b></li>
+            </ul>
+        </div>
+        <div className="dropdownBarQ">
+            <Dropdown selected={building && building.label} defaultLabel={""} options={buildingList}
+                      onChange={setBuilding}/>
+            <Dropdown selected={room && room.label} defaultLabel={""} options={roomList} onChange={setRoom}/>
+            <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList} onChange={setLesson}/>
+            <Dropdown selected={date && date.label} defaultLabel={""} options={dateList} onChange={setDate}/>
+        </div>
+        {series && options &&
+        <ReactApexChart options={options} series={series} type="line" height={350}/>
+        }
+        <div className='indexFrame'>
+            <div className="row row-cols-1 row-cols-md-3 g-4">
+
+                {!building && !room && !lesson &&
+                buildingList.map(building => (
+                    // <div class="col">{building.value}</div>
+                    <div className="col" key={building.value}>
+                        <div className="card w-50">
+                            <img src="https://www.iconpacks.net/icons/1/free-building-icon-1062-thumb.png"
+                                 className="card-img-top" alt="..."></img>
+                            <div className="card-body">
+                                <h5 className="card-title">{building.value}</h5>
+                                <p className="card-text">There will be number of people inside</p>
+                            </div>
+                        </div>
+                    </div>
+                ))
+                }
+            </div>
+        </div>
+    </>
 }
 
 export default App;
