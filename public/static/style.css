@@ -48,3 +48,8 @@ li.liNavbarLabels {
     padding: 3%;
     margin-top: 8%;
 }
+.piecharts{
+    display: flex;
+    align-content: center;
+    justify-content: center;
+}

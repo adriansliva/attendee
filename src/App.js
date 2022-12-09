@@ -5,9 +5,6 @@ import Dropdown from './components/Dropdown';
 
 function App() {
 
-    const [data, setData] = useState();
-    const [lessonsData, setLessonsData] = useState();
-
     const [buildingList, setBuildingList] = useState([]);
     const [roomList, setRoomList] = useState([]);
     const [lessonList, setLessonList] = useState([]);
@@ -19,10 +16,7 @@ function App() {
     const [dates, setDates] = useState([]);
     const [buildingDates, setBuildingDates] = useState([]);
     const [roomDates, setRoomDates] = useState([]);
-    const [lessonDates, setLessonDates] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
-
-    const [test, setTest] = useState();
 
     const [building, setBuilding] = useState();
     const [room, setRoom] = useState();
@@ -32,32 +26,32 @@ function App() {
     const [series, setSeries] = useState();
     const [options, setOptions] = useState();
 
-    const getDayName = (day) => {
+    const [pieInSeries, setPieInSeries] = useState();
+    const [pieInOptions, setPieInOptions] = useState();
+
+    const [pieOutSeries, setPieOutSeries] = useState();
+    const [pieOutOptions, setPieOutOptions] = useState();
+
+    const getDayId = (day) => {
         switch (day) {
-            case 0:
-                return "Sunday";
-            case 1:
-                return "Monday";
-            case 2:
-                return "Tuesday";
-            case 3:
-                return "Wednesday";
-            case 4:
-                return "Thursday";
-            case 5:
-                return "Friday";
-            case 6:
-                return "Saturday";
+            case "Sunday":
+                return 0;
+            case "Monday":
+                return 1;
+            case "Tuesday":
+                return 2;
+            case "Wednesday":
+                return 3;
+            case "Thursday":
+                return 4;
+            case "Friday":
+                return 5;
+            case "Saturday":
+                return 6;
             default:
                 console.log('day not defined')
         }
     }
-
-    const getData = () => {
-        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/`)
-            .then((response) => response.json())
-            .then((actualData) => setData(actualData));
-    };
 
     const getBuildings = () => {
         fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings`)
@@ -65,43 +59,7 @@ function App() {
             .then((actualData) => setBuildings(actualData));
     };
 
-    const getLessons = () => {
-        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons`)
-            .then((response) => response.json())
-            .then((actualData) => setLessonsData(actualData));
-    };
-
-    const updateFilteredData = () => {
-        if (!date) {
-            var today = new Date();
-            var dd = String(today.getDate()).padStart(2, '0');
-            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-            var yyyy = today.getFullYear();
-        }
-
-        // console.log(building);
-        // console.log(room);
-
-        if (building && !room && !lesson) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${building.value}`)
-                .then((response) => response.json())
-                .then((actualData) => setFilteredData(actualData));
-        } else if (room && building && !lesson) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${room.value}`)
-                .then((response) => response.json())
-                .then((actualData) => setFilteredData(actualData));
-        } else if (lesson && building && room) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${room.value}`)
-                .then((response) => response.json())
-                .then((actualData) => setFilteredData(actualData));
-        } else {
-            setFilteredData([]);
-        }
-    }
-
     useEffect(() => {
-        getData();
-        getLessons();
         getBuildings();
     }, []);
 
@@ -119,10 +77,6 @@ function App() {
     }, [buildings]);
 
     useEffect(() => {
-        if(!room){
-          setDate(null);
-          if(!date) updateFilteredData();
-        }
         setBuildingDates([]);
         setDates([]);
         setRooms([]);
@@ -155,75 +109,23 @@ function App() {
     }, [rooms]);
 
     useEffect(() => {
-        if (dates) {
-            var datesOptions = []
+        setRoomDates([]);
+        if(building) setDates(buildingDates);
+        setLessons([]);
+        setLesson(null);
+        if (room) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/dates/${room.value}`)
+                .then((response) => response.json())
+                .then((actualData) => {
+                    setDates(actualData);
+                    setRoomDates(actualData)
+                });
 
-            dates.forEach(date => {
-                const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
-                datesOptions.push(option);
-            });
-
-            setDateList(datesOptions);
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons/${room.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setLessons(actualData));
         }
-    }, [dates]);
-
-    useEffect(() => {
-        updateFilteredData();
-    }, [date]);
-
-    useEffect(() => {
-      if(!lesson){
-        setDate(null);
-        if(!date) updateFilteredData();
-      }
-      setRoomDates([]);
-      if(building) setDates(buildingDates);
-      setLessons([]);
-      setLesson(null);
-      if (room) {
-          fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/dates/${room.value}`)
-              .then((response) => response.json())
-              .then((actualData) => {
-                  setDates(actualData);
-                  setRoomDates(actualData)
-              });
-
-          fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons/${room.value}`)
-              .then((response) => response.json())
-              .then((actualData) => setLessons(actualData));
-      }
-    }, [room]);
-
-    useEffect(() => {
-        setDate(null);
-        if(!date) updateFilteredData();
-        if(room) setDates(roomDates);
-        if (lesson) {
-            // var dates = []
-            //
-            // data.forEach(element => {
-            //     const date = new Date(element.sample_time);
-            //     const dateObject = {
-            //         year: date.getFullYear(),
-            //         month: date.getMonth() + 1,
-            //         day: date.getDate()
-            //     }
-            //
-            //     if (JSON.stringify(dates[dates.length - 1]) !== JSON.stringify(dateObject) && element.device_data.building === building.value && element.device_data.room === room.value && getDayName(date.getDay()) === lesson.value.day) {
-            //         dates.push(dateObject);
-            //     }
-            // });
-            //
-            // var datesOptions = []
-            //
-            // dates.forEach(date => {
-            //     const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
-            //     datesOptions.push(option);
-            // });
-            //
-            // setDateList(datesOptions);
-        }
-    }, [lesson]);
+      }, [room]);
 
     useEffect(() => {
         if (lessons) {
@@ -241,17 +143,121 @@ function App() {
     }, [lessons]);
 
     useEffect(() => {
+        if(room) setDates(roomDates);
+        if (lesson) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/dates/${room.value}/${getDayId(lesson.value.day)}`)
+              .then((response) => response.json())
+              .then((actualData) => {
+                  setDates(actualData);
+            });
+        }
+    }, [lesson]);
+
+    useEffect(() => {
+        if (dates) {
+            setDate(null);
+            if(!date) updateFilteredData();
+            var datesOptions = []
+
+            dates.forEach(date => {
+                const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
+                datesOptions.push(option);
+            });
+
+            setDateList(datesOptions);
+        }
+    }, [dates]);
+
+    useEffect(() => {
+        updateFilteredData();
+    }, [date]);
+
+    const updateFilteredData = () => {
+        if (!date) {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = today.getFullYear();
+        }
+
+        // console.log(building);
+        // console.log(room);
+
+        if (building && !room && !lesson) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${building.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setFilteredData(actualData));
+        } else if (room && building && !lesson) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${room.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setFilteredData(actualData));
+        } else if (lesson && building && room) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : dates[dates.length-1].year}-${date ? date.value.month : dates[dates.length-1].month}-${date ? date.value.day : dates[dates.length-1].day}/${room.value}`)
+                .then((response) => response.json())
+                .then((actualData) => setFilteredData(actualData));
+        } else {
+            setFilteredData([]);
+        }
+    }
+
+    useEffect(() => {
         if (filteredData.length !== 0) {
+            var deviceIds = [];
+            var deviceIdsObjects = [];
+            filteredData.forEach(element => {
+                if(deviceIds.indexOf(element.device_id) === -1){
+                    deviceIds.push(element.device_id);
+                    const obj = {
+                        device_id : element.device_id,
+                        in: 0,
+                        out: 0
+                    }
+                    deviceIdsObjects.push(obj);
+                }
+            });
             const counts = []
             var count = 0
             const times = []
-            filteredData.forEach(element => {
-                const date = new Date(element.sample_time);
-                count = count + (element.device_data.diff_in - element.device_data.diff_out);
-                counts.push(count);
-                const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
-                times.push(time);
-            });
+            if(lesson){
+                var start_date;
+                var end_date;
+                if(date){
+                    start_date = new Date(`${date.value.year}-${date.value.month}-${date.value.day} ${lesson.value.start_time}`)
+                    end_date = new Date(`${date.value.year}-${date.value.month}-${date.value.day} ${lesson.value.end_time}`)
+                }else{
+                    start_date = new Date(`${dates[dates.length-1].year}-${dates[dates.length-1].month}-${dates[dates.length-1].day} ${lesson.value.start_time}`)
+                    end_date = new Date(`${dates[dates.length-1].year}-${dates[dates.length-1].month}-${dates[dates.length-1].day} ${lesson.value.end_time}`)
+                }
+                filteredData.forEach(element => {
+                    const date = new Date(element.sample_time);
+                    count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                    if(date >= start_date && date <= end_date){
+                        deviceIdsObjects.forEach(obj =>{
+                            if(element.device_id === obj.device_id){
+                                obj.in = obj.in + element.device_data.diff_in;
+                                obj.out = obj.out + element.device_data.diff_out;
+                            }
+                        })
+                        const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+                        counts.push(count);
+                        times.push(time);
+                    }
+                });
+            }else{
+                filteredData.forEach(element => {
+                    deviceIdsObjects.forEach(obj =>{
+                        if(element.device_id === obj.device_id){
+                            obj.in = obj.in + element.device_data.diff_in;
+                            obj.out = obj.out + element.device_data.diff_out;
+                        }
+                    })
+                    const date = new Date(element.sample_time);
+                    count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                    counts.push(count);
+                    const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+                    times.push(time);
+                });
+            }
 
             setSeries([{
                 name: "Count",
@@ -286,9 +292,71 @@ function App() {
                     categories: times,
                 }
             });
+
+            var seriesIns = []
+            var seriesOuts = []
+            var options = []
+
+            deviceIdsObjects.forEach(obj => {
+                seriesIns.push(obj.in);
+                seriesOuts.push(obj.out);
+                options.push(obj.device_id);
+            });
+
+            setPieInSeries(seriesIns)
+            setPieInOptions({
+                chart: {
+                  width: 380,
+                  type: 'pie',
+                },
+                labels: options,
+                title: {
+                    text: 'In',
+                    align: 'left'
+                },
+                responsive: [{
+                  breakpoint: 480,
+                  options: {
+                    chart: {
+                      width: 200
+                    },
+                    legend: {
+                      position: 'bottom'
+                    }
+                  }
+                }]
+              })
+
+            setPieOutSeries(seriesOuts)
+            setPieOutOptions({
+                chart: {
+                  width: 380,
+                  type: 'pie',
+                },
+                labels: options,
+                title: {
+                    text: 'Out',
+                    align: 'left'
+                },
+                responsive: [{
+                  breakpoint: 480,
+                  options: {
+                    chart: {
+                      width: 200
+                    },
+                    legend: {
+                      position: 'bottom'
+                    }
+                  }
+                }]
+              })
         } else {
             setSeries(null);
             setOptions(null);
+            setPieInSeries(null);
+            setPieInOptions(null);
+            setPieOutSeries(null);
+            setPieOutOptions(null);
         }
     }, [filteredData]);
 
@@ -308,9 +376,30 @@ function App() {
             <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList} onChange={setLesson}/>
             <Dropdown selected={date && date.label} defaultLabel={""} options={dateList} onChange={setDate}/>
         </div>
-        {series && options &&
-        <ReactApexChart options={options} series={series} type="line" height={350}/>
-        }
+        <div>
+            {series && options &&
+                <ReactApexChart options={options} series={series} type="line" height={350}/>
+            }
+            <div className="piecharts">
+                {pieInSeries && pieInOptions &&
+                        <ReactApexChart options={pieInOptions} series={pieInSeries} type="pie" width={380} />
+                }
+                {pieOutSeries && pieOutOptions &&
+                        <ReactApexChart options={pieOutOptions} series={pieOutSeries} type="pie" width={380} />
+                }
+            </div>
+        </div>
+
+        {/*series && options && room && !lesson && <div>
+            <ReactApexChart options={options} series={series} type="line" height={350}/>
+            <div className="piecharts">
+                <ReactApexChart options={options} series={series[0].data} type="pie" height={350} width={300}/>
+                <ReactApexChart options={options} series={series[0].data} type="pie" height={350} width={300}/>
+            </div>
+
+        </div>
+
+    */}
         <div className='indexFrame'>
             <div className="row row-cols-1 row-cols-md-3 g-4">
 
