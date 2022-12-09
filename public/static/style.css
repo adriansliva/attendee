@@ -53,3 +53,8 @@ li.liNavbarLabels {
     align-content: center;
     justify-content: center;
 }
+
+.graph{
+    margin-left: 10%;
+    margin-right: 10%;
+}

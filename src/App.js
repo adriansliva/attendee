@@ -378,7 +378,9 @@ function App() {
         </div>
         <div>
             {series && options &&
-                <ReactApexChart options={options} series={series} type="line" height={350}/>
+                <div className="graph">
+                    <ReactApexChart options={options} series={series} type="line" height={350}/>
+                </div>
             }
             <div className="piecharts">
                 {pieInSeries && pieInOptions &&
