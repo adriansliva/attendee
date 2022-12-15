@@ -38,6 +38,7 @@ li.liNavbarLabels {
     justify-content: space-between;
     margin-left: 27%;
     margin-right: 27%;
+
 }
 
 .btn {
@@ -57,4 +58,31 @@ li.liNavbarLabels {
 .graph{
     margin-left: 10%;
     margin-right: 10%;
+}
+.dropdownItemsQ {
+    position: absolute;
+    z-index: 100;
+    min-width: 230px;
+    background-color: white;
+}
+.currentCount{
+    max-width: 300px;
+    margin-left: 10%;
+}
+.datePicker{
+    min-width: 230px;
+    background-color: #6c757d;
+    
+}
+
+input{
+    background-color: gray;
+    text-align: center;
+    color: white;
+    border: none;
+    
+}
+div.react-datepicker__input-container{
+    display: flex;
+    justify-content: center;
 }

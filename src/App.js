@@ -2,8 +2,12 @@ import {useEffect, useState} from 'react';
 import ReactApexChart from 'react-apexcharts'
 import 'react-dropdown/style.css';
 import Dropdown from './components/Dropdown';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function App() {
+
+    const [currentCount, setCurrentCount] = useState();
 
     const [buildingList, setBuildingList] = useState([]);
     const [roomList, setRoomList] = useState([]);
@@ -93,6 +97,7 @@ function App() {
                     setBuildingDates(actualData)
                 });
         }
+        setCurrentCount();
     }, [building]);
 
     useEffect(() => {
@@ -110,7 +115,7 @@ function App() {
 
     useEffect(() => {
         setRoomDates([]);
-        if(building) setDates(buildingDates);
+        if (building) setDates(buildingDates);
         setLessons([]);
         setLesson(null);
         if (room) {
@@ -125,7 +130,8 @@ function App() {
                 .then((response) => response.json())
                 .then((actualData) => setLessons(actualData));
         }
-      }, [room]);
+        setCurrentCount();
+    }, [room]);
 
     useEffect(() => {
         if (lessons) {
@@ -143,34 +149,43 @@ function App() {
     }, [lessons]);
 
     useEffect(() => {
-        if(room) setDates(roomDates);
+        if (room) setDates(roomDates);
         if (lesson) {
             fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/dates/${room.value}/${getDayId(lesson.value.day)}`)
-              .then((response) => response.json())
-              .then((actualData) => {
-                  setDates(actualData);
-            });
+                .then((response) => response.json())
+                .then((actualData) => {
+                    setDates(actualData);
+                });
         }
+        setCurrentCount();
     }, [lesson]);
+
+    useEffect(() => {
+        updateFilteredData();
+        setCurrentCount();
+    }, [date]);
 
     useEffect(() => {
         if (dates) {
             setDate(null);
-            if(!date) updateFilteredData();
+            if (!date) updateFilteredData();
             var datesOptions = []
 
+            //  dates.forEach(date => {
+            //       console.log(date);
+            //       const option = {label: ${date.day}-${date.month}-${date.year}, value: date};
+            //       datesOptions.push(option);
+            //   });
+            //
+            //   setDateList(datesOptions);
+            var arrayDate = [];
             dates.forEach(date => {
-                const option = {label: `${date.day}-${date.month}-${date.year}`, value: date};
-                datesOptions.push(option);
-            });
-
-            setDateList(datesOptions);
+                arrayDate.push(new Date(`${date.year}-${date.month}-${date.day}`));
+            })
+            setDateList(arrayDate);
+            console.log(dates)
         }
     }, [dates]);
-
-    useEffect(() => {
-        updateFilteredData();
-    }, [date]);
 
     const updateFilteredData = () => {
         if (!date) {
@@ -184,15 +199,15 @@ function App() {
         // console.log(room);
 
         if (building && !room && !lesson) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${building.value}`)
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/${date ? date.getFullYear() : yyyy}-${date ? date.getMonth() + 1 : mm}-${date ? date.getDate() : dd}/${building.value}`)
                 .then((response) => response.json())
                 .then((actualData) => setFilteredData(actualData));
         } else if (room && building && !lesson) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : yyyy}-${date ? date.value.month : mm}-${date ? date.value.day : dd}/${room.value}`)
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.getFullYear() : yyyy}-${date ? date.getMonth() + 1 : mm}-${date ? date.getDate() : dd}/${room.value}`)
                 .then((response) => response.json())
                 .then((actualData) => setFilteredData(actualData));
-        } else if (lesson && building && room) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.value.year : dates[dates.length-1].year}-${date ? date.value.month : dates[dates.length-1].month}-${date ? date.value.day : dates[dates.length-1].day}/${room.value}`)
+        } else if (lesson && building && room && dates) {
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.getFullYear() : dates[dates.length - 1].year}-${date ? date.getMonth() + 1 : dates[dates.length - 1].month}-${date ? date.getDate() : dates[dates.length - 1].day}/${room.value}`)
                 .then((response) => response.json())
                 .then((actualData) => setFilteredData(actualData));
         } else {
@@ -205,35 +220,55 @@ function App() {
             var deviceIds = [];
             var deviceIdsObjects = [];
             filteredData.forEach(element => {
-                if(deviceIds.indexOf(element.device_id) === -1){
+                if (deviceIds.indexOf(element.device_id) === -1) {
                     deviceIds.push(element.device_id);
                     const obj = {
-                        device_id : element.device_id,
+                        device_id: element.device_id,
                         in: 0,
                         out: 0
                     }
                     deviceIdsObjects.push(obj);
                 }
             });
+            console.log(deviceIds.length)
             const counts = []
             var count = 0
             const times = []
-            if(lesson){
+            if (lesson && dates) {
                 var start_date;
                 var end_date;
-                if(date){
-                    start_date = new Date(`${date.value.year}-${date.value.month}-${date.value.day} ${lesson.value.start_time}`)
-                    end_date = new Date(`${date.value.year}-${date.value.month}-${date.value.day} ${lesson.value.end_time}`)
-                }else{
-                    start_date = new Date(`${dates[dates.length-1].year}-${dates[dates.length-1].month}-${dates[dates.length-1].day} ${lesson.value.start_time}`)
-                    end_date = new Date(`${dates[dates.length-1].year}-${dates[dates.length-1].month}-${dates[dates.length-1].day} ${lesson.value.end_time}`)
+                if (date) {
+                    start_date = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${lesson.value.start_time}`)
+                    end_date = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${lesson.value.end_time}`)
+                } else {
+                    start_date = new Date(`${dates[dates.length - 1].year}-${dates[dates.length - 1].month}-${dates[dates.length - 1].day} ${lesson.value.start_time}`)
+                    end_date = new Date(`${dates[dates.length - 1].year}-${dates[dates.length - 1].month}-${dates[dates.length - 1].day} ${lesson.value.end_time}`)
                 }
-                filteredData.forEach(element => {
+                var tmp_min = false;
+                var tmp_prev_count = 0;
+                var tmp_next_count = null;
+                filteredData.forEach((element, index) => {
                     const date = new Date(element.sample_time);
                     count = count + (element.device_data.diff_in - element.device_data.diff_out);
-                    if(date >= start_date && date <= end_date){
-                        deviceIdsObjects.forEach(obj =>{
-                            if(element.device_id === obj.device_id){
+
+                    if (date >= start_date && tmp_min === false) {
+                        tmp_min = true;
+                        const time = `${start_date.getHours()}:${start_date.getMinutes()}:${start_date.getSeconds()}`;
+                        times.push(time);
+                        console.log();
+                        counts.push(tmp_prev_count);
+                    }
+                    tmp_prev_count = count;
+                })
+                count = 0;
+                tmp_min = false;    //in this case this is tmp max
+                filteredData.forEach((element, index) => {
+                    const date = new Date(element.sample_time);
+                    count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                    if (date >= start_date && date <= end_date) {
+                        tmp_next_count = count;
+                        deviceIdsObjects.forEach(obj => {
+                            if (element.device_id === obj.device_id) {
                                 obj.in = obj.in + element.device_data.diff_in;
                                 obj.out = obj.out + element.device_data.diff_out;
                             }
@@ -243,10 +278,13 @@ function App() {
                         times.push(time);
                     }
                 });
-            }else{
+                counts.push(tmp_next_count);
+                const time = `${end_date.getHours()}:${end_date.getMinutes()}:${end_date.getSeconds()}`;
+                times.push(time);
+            } else {
                 filteredData.forEach(element => {
-                    deviceIdsObjects.forEach(obj =>{
-                        if(element.device_id === obj.device_id){
+                    deviceIdsObjects.forEach(obj => {
+                        if (element.device_id === obj.device_id) {
                             obj.in = obj.in + element.device_data.diff_in;
                             obj.out = obj.out + element.device_data.diff_out;
                         }
@@ -257,6 +295,7 @@ function App() {
                     const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
                     times.push(time);
                 });
+                setCurrentCount(counts[(counts.length) - 1]);
             }
 
             setSeries([{
@@ -303,53 +342,60 @@ function App() {
                 options.push(obj.device_id);
             });
 
-            setPieInSeries(seriesIns)
-            setPieInOptions({
-                chart: {
-                  width: 380,
-                  type: 'pie',
-                },
-                labels: options,
-                title: {
-                    text: 'In',
-                    align: 'left'
-                },
-                responsive: [{
-                  breakpoint: 480,
-                  options: {
+            if (deviceIds.length > 1) {
+                setPieInSeries(seriesIns)
+                setPieInOptions({
                     chart: {
-                      width: 200
+                        width: 380,
+                        type: 'pie',
                     },
-                    legend: {
-                      position: 'bottom'
-                    }
-                  }
-                }]
-              })
+                    labels: options,
+                    title: {
+                        text: 'In',
+                        align: 'left'
+                    },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: {
+                                width: 200
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }]
+                })
 
-            setPieOutSeries(seriesOuts)
-            setPieOutOptions({
-                chart: {
-                  width: 380,
-                  type: 'pie',
-                },
-                labels: options,
-                title: {
-                    text: 'Out',
-                    align: 'left'
-                },
-                responsive: [{
-                  breakpoint: 480,
-                  options: {
+                setPieOutSeries(seriesOuts)
+                setPieOutOptions({
                     chart: {
-                      width: 200
+                        width: 380,
+                        type: 'pie',
                     },
-                    legend: {
-                      position: 'bottom'
-                    }
-                  }
-                }]
-              })
+                    labels: options,
+                    title: {
+                        text: 'Out',
+                        align: 'left'
+                    },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: {
+                                width: 200
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }]
+                })
+            } else {
+                setPieInSeries(null);
+                setPieInOptions(null);
+                setPieOutSeries(null);
+                setPieOutOptions(null);
+            }
         } else {
             setSeries(null);
             setOptions(null);
@@ -374,23 +420,38 @@ function App() {
                       onChange={setBuilding}/>
             <Dropdown selected={room && room.label} defaultLabel={""} options={roomList} onChange={setRoom}/>
             <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList} onChange={setLesson}/>
-            <Dropdown selected={date && date.label} defaultLabel={""} options={dateList} onChange={setDate}/>
+            {/*<Dropdown selected={date && date.label} defaultLabel={""} options={dateList} onChange={setDate}/>*/}
+            <div className='datePicker'>
+            <DatePicker selected={date} onChange={(date) => {
+            setDate(date);
+        }} includeDates={dateList}/>
+            </div>
         </div>
+
+        <div className="currentCount">
+            {!date && !lesson && building && <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading">Current attendees</h4>
+                <h1>{currentCount}</h1>
+            </div>}
+        </div>
+
         <div>
             {series && options &&
-                <div className="graph">
-                    <ReactApexChart options={options} series={series} type="line" height={350}/>
-                </div>
+            <div className="graph">
+                <ReactApexChart options={options} series={series} type="line" height={350}/>
+            </div>
             }
             <div className="piecharts">
                 {pieInSeries && pieInOptions &&
-                        <ReactApexChart options={pieInOptions} series={pieInSeries} type="pie" width={380} />
+                <ReactApexChart options={pieInOptions} series={pieInSeries} type="pie" width={380}/>
                 }
                 {pieOutSeries && pieOutOptions &&
-                        <ReactApexChart options={pieOutOptions} series={pieOutSeries} type="pie" width={380} />
+                <ReactApexChart options={pieOutOptions} series={pieOutSeries} type="pie" width={380}/>
                 }
             </div>
         </div>
+
+       
 
         {/*series && options && room && !lesson && <div>
             <ReactApexChart options={options} series={series} type="line" height={350}/>
