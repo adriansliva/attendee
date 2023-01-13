@@ -6,14 +6,15 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import moment from "moment";
 import Spinner from 'react-bootstrap/Spinner';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRefresh } from '@fortawesome/free-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faRefresh} from '@fortawesome/free-solid-svg-icons'
+import {forEach} from "react-bootstrap/ElementChildren";
 
 function App() {
 
     const [currentCount, setCurrentCount] = useState();
-    const [minCount, setMinCount] = useState();
-    const [maxCount, setMaxCount] = useState();
+    const [minCount, setMinCount] = useState(0);
+    const [maxCount, setMaxCount] = useState(0);
 
     const [buildingList, setBuildingList] = useState([]);
     const [roomList, setRoomList] = useState([]);
@@ -50,6 +51,9 @@ function App() {
     const [loadingTimes, setLoadingTimes] = useState(false);
     const [loadingGraph, setLoadingGraph] = useState(false);
 
+    const [actualCount, setActualCount] = useState([]);
+
+    const [periodTime, setPeriodTime] = useState('');
 
 
     const getDayId = (day) => {
@@ -84,8 +88,15 @@ function App() {
             .then((actualData) => setBuildings(actualData));
     };
 
+    const getActualCountBuildings = () => {
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings/actual`)
+            .then((response) => response.json())
+            .then((actualData) => setActualCount(actualData));
+    };
+
     useEffect(() => {
         getBuildings();
+        getActualCountBuildings();
     }, []);
 
     useEffect(() => {
@@ -113,8 +124,8 @@ function App() {
                 .then((response) => response.json())
                 .then((actualData) => setRooms(actualData));
 
-                setLoadingTimes(true);
-                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/dates/${building.value}`)
+            setLoadingTimes(true);
+            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/building/dates/${building.value}`)
                 .then((response) => response.json())
                 .then((actualData) => {
                     setDates(actualData);
@@ -175,6 +186,32 @@ function App() {
         }
     }, [lessons]);
 
+    const addZero = (time) => {
+        if (parseInt(time) < 10) {
+            return '0' + time;
+        } else {
+            return time;
+        }
+    }
+
+    const createAdditionalTime = (sub, plus) => {
+        return `${addZero(sub.hour())}:${addZero(sub.minute())}-${addZero(plus.hour())}:${addZero(plus.minute())}`;
+    }
+
+    const setPeriod = () => {
+        if(periodTime){
+            setPeriodTime('');
+            setSeries(null);
+            setOptions(null);
+        }else{
+            var today = new Date();
+            var priorDate = new Date(today.setMonth(today.getMonth() - 1));
+
+            var dateOfPeriod = priorDate.getFullYear() + '-' + (priorDate.getMonth() + 1) + '-' + priorDate.getDate();
+            setPeriodTime(dateOfPeriod);
+        }
+    }
+
     const timer = (startTime, endTime) => {
         var arrayStartTime = startTime.split(":");
         var arrayEndTime = endTime.split(":");
@@ -217,22 +254,26 @@ function App() {
         }
 
         const option5 = {
-            label: `${sub5Min.hour()}:${sub5Min.minute()}-${plus5Min.hour()}:${plus5Min.minute()}`,
+            label: createAdditionalTime(sub5Min, plus5Min),
             value: obj5
         };
 
         const option10 = {
-            label: `${sub10Min.hour()}:${sub10Min.minute()}-${plus10Min.hour()}:${plus10Min.minute()}`,
+            label: createAdditionalTime(sub10Min, plus10Min),
             value: obj10
         };
 
         const option15 = {
-            label: `${sub15Min.hour()}:${sub15Min.minute()}-${plus15Min.hour()}:${plus15Min.minute()}`,
+            label: createAdditionalTime(sub15Min, plus15Min),
             value: obj15
         };
 
         setTimeRangeList([option5, option10, option15]);
     }
+
+    useEffect(() => {
+        updateFilteredData();
+    },[periodTime])
 
     useEffect(() => {
         if (room) setDates(roomDates);
@@ -295,147 +336,116 @@ function App() {
                 .then((response) => response.json())
                 .then((actualData) => setFilteredData(actualData));
         } else if (lesson && building && room && dates) {
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.getFullYear() : dates[dates.length - 1].year}-${date ? date.getMonth() + 1 : dates[dates.length - 1].month}-${date ? date.getDate() : dates[dates.length - 1].day}/${room.value}`)
-                .then((response) => response.json())
-                .then((actualData) => setFilteredData(actualData));
+            if (periodTime) {
+                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${getDayId(lesson.value.day)}`)
+                    .then((response) => response.json())
+                    .then((actualData) => setFilteredData(actualData));
+            } else {
+                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/room/${date ? date.getFullYear() : dates[dates.length - 1].year}-${date ? date.getMonth() + 1 : dates[dates.length - 1].month}-${date ? date.getDate() : dates[dates.length - 1].day}/${room.value}`)
+                    .then((response) => response.json())
+                    .then((actualData) => setFilteredData(actualData));
+            }
         } else {
             setFilteredData([]);
         }
     }
 
-    useEffect(() =>{
-        updateFilteredData();
-    },[timeRange]);
-
     useEffect(() => {
-        setLoadingGraph(false);
-        setMinCount();
-        setMaxCount();
-        if (filteredData.length !== 0) {
-            var deviceIds = [];
-            var deviceIdsObjects = [];
-            var count = 0;
-            var min = null;
-            var max = 0;
-            filteredData.forEach(element => {
-                if (deviceIds.indexOf(element.device_id) === -1) {
-                    deviceIds.push(element.device_id);
-                    const obj = {
-                        device_id: element.device_id,
-                        in: 0,
-                        out: 0
-                    }
-                    deviceIdsObjects.push(obj);
-                }
-            });
-            count = 0;
-            const counts = [];
-            const times = [];
-            if (lesson && dates) {
-                var start_date;
-                var end_date;
-                var selectedStartTime = lesson.value.start_time;
-                var selectedEndTime = lesson.value.end_time;
+        updateFilteredData();
+    }, [timeRange]);
 
-                if (timeRange) {
-                    selectedStartTime = timeRange.value.start_time;
-                    selectedEndTime = timeRange.value.end_time;
-                }
+    const renderPeriodGraph = (data) => {
+        var count = 0;
+        var today = new Date();
+        if (lesson && dates) {
+            var start_date;
+            var end_date;
+            var selectedStartTime = lesson.value.start_time;
+            var selectedEndTime = lesson.value.end_time;
 
-                if (date) {
-                    start_date = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${selectedStartTime}`)
-                    end_date = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${selectedEndTime}`)
-                } else {
-                    start_date = new Date(`${dates[dates.length - 1].year}-${dates[dates.length - 1].month}-${dates[dates.length - 1].day} ${selectedStartTime}`)
-                    end_date = new Date(`${dates[dates.length - 1].year}-${dates[dates.length - 1].month}-${dates[dates.length - 1].day} ${selectedEndTime}`)
-                }
-                var tmp_min = false;
-                var tmp_prev_count = 0;
-                var tmp_next_count = null;
-                filteredData.forEach((element) => {
-                    const date = new Date(element.sample_time);
-                    count = count + (element.device_data.diff_in - element.device_data.diff_out);
+            if (timeRange) {
+                selectedStartTime = timeRange.value.start_time;
+                selectedEndTime = timeRange.value.end_time;
+            }
+
+
+            var finalArray = [];
+
+            var tmp_min = false;
+            var tmp_prev_count = 0;
+            var tmp_next_count = null;
+            data.forEach((element, index, array) => {
+                var dateData = new Date(element.date);
+                start_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedStartTime}`)
+                end_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedEndTime}`)
+                tmp_prev_count = 0;
+                count = 0;
+                finalArray[index] = {date: element.date, device_data: []};
+                element.device_data.forEach((item) => {
+                    const date = new Date(item.date);
+                    count = count + (item.diff_in - item.diff_out);
 
                     if (date >= start_date && tmp_min === false) {
-                        if (min > tmp_prev_count || min == null) {
-                            min = tmp_prev_count;
-                        }
-
-                        if (max < tmp_prev_count) {
-                            max = tmp_prev_count;
-                        }
                         tmp_min = true;
                         const time = correct_time(start_date);
-                        times.push(time);
-                        counts.push(tmp_prev_count);
+                        finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: tmp_prev_count});
+
                     }
                     tmp_prev_count = count;
                 })
+                if(finalArray[index].device_data.length === 0){
+                    const time = correct_time(start_date);
+                    finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: 0})
+                }
+            })
+
+            var tempIndexElement = 0;
+
+            tmp_min = false;    //in this case this is tmp max
+            data.forEach((element, index, array) => {
+                var dateData = new Date(element.date);
                 count = 0;
-                tmp_min = false;    //in this case this is tmp max
-                filteredData.forEach((element) => {
-                    const date = new Date(element.sample_time);
-                    count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                start_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedStartTime}`)
+                end_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedEndTime}`)
+                element.device_data.forEach((item, indexElement) => {
+                    const date = new Date(item.date);
+                    count = count + (item.diff_in - item.diff_out);
                     if (date >= start_date && date <= end_date) {
-                        if (min > count || min == null) {
-                            min = count;
-                        }
 
-                        if (max < count) {
-                            max = count;
-                        }
                         tmp_next_count = count;
-                        deviceIdsObjects.forEach(obj => {
-                            if (element.device_id === obj.device_id) {
-                                obj.in = obj.in + element.device_data.diff_in;
-                                obj.out = obj.out + element.device_data.diff_out;
-                            }
-                        })
+                        // deviceIdsObjects.forEach(obj => {
+                        //     if (element.device_id === obj.device_id) {
+                        //         obj.in = obj.in + element.device_data.diff_in;
+                        //         obj.out = obj.out + element.device_data.diff_out;
+                        //     }
+                        // })
                         const time = correct_time(date);
-                        counts.push(count);
-                        times.push(time);
+                        finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: count});
+
+                        tempIndexElement = indexElement;
                     }
-                });
-                counts.push(tmp_next_count);
+
+                })
                 const time = correct_time(end_date);
-                times.push(time);
-            } else {
-                filteredData.forEach(element => {
-                    deviceIdsObjects.forEach(obj => {
-                        if (element.device_id === obj.device_id) {
-                            obj.in = obj.in + element.device_data.diff_in;
-                            obj.out = obj.out + element.device_data.diff_out;
-                        }
-                    })
-                    const date = new Date(element.sample_time);
-                    count = count + (element.device_data.diff_in - element.device_data.diff_out);
-                    if (min > count || min == null) {
-                        min = count;
-                    }
+                finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: tmp_next_count});
+            });
 
-                    if (max < count) {
-                        max = count;
-                    }
-                    counts.push(count);
-                    const time = correct_time(date);
-                    times.push(time);
-                });
-                setCurrentCount(counts[(counts.length) - 1]);
-            }
-            setMinCount(min);
-            setMaxCount(max);
+            var array = [];
 
-            setSeries([{
-                name: "Count",
-                data: counts
-            }
-            ])
+            finalArray.forEach((item, index) => {
+                array[index] = {name: item.date, data: []}
+                item.device_data.forEach((element) => {
+                    array[index].data.push([element.time, element.count])
+                })
+            })
+
+            setSeries(array)
             setOptions({
                 chart: {
                     height: 350,
                     type: 'line',
                     zoom: {
-                        enabled: false
+                        enabled: true
                     }
                 },
                 dataLabels: {
@@ -455,73 +465,236 @@ function App() {
                     },
                 },
                 xaxis: {
-                    categories: times,
+                    type: 'datetime',
+                    labels: {
+                        formatter: function (timestamp) {
+                            return new Date(timestamp).toLocaleTimeString() // The formatter function overrides format property
+                        },
+                    }
                 }
             });
+        }
+    }
 
-            var seriesIns = []
-            var seriesOuts = []
-            var options = []
-
-            deviceIdsObjects.forEach(obj => {
-                seriesIns.push(obj.in);
-                seriesOuts.push(obj.out);
-                options.push(obj.device_id);
-            });
-
-            if (deviceIds.length > 1) {
-                setPieInSeries(seriesIns)
-                setPieInOptions({
-                    chart: {
-                        width: 380,
-                        type: 'pie',
-                    },
-                    labels: options,
-                    title: {
-                        text: 'In',
-                        align: 'left'
-                    },
-                    responsive: [{
-                        breakpoint: 480,
-                        options: {
-                            chart: {
-                                width: 200
-                            },
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }]
-                })
-
-                setPieOutSeries(seriesOuts)
-                setPieOutOptions({
-                    chart: {
-                        width: 380,
-                        type: 'pie',
-                    },
-                    labels: options,
-                    title: {
-                        text: 'Out',
-                        align: 'left'
-                    },
-                    responsive: [{
-                        breakpoint: 480,
-                        options: {
-                            chart: {
-                                width: 200
-                            },
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }]
-                })
+    useEffect(() => {
+        setLoadingGraph(false);
+        setMinCount();
+        setMaxCount();
+        if (filteredData.length !== 0) {
+            if (periodTime) {
+                renderPeriodGraph(filteredData);
             } else {
-                setPieInSeries(null);
-                setPieInOptions(null);
-                setPieOutSeries(null);
-                setPieOutOptions(null);
+                var deviceIds = [];
+                var deviceIdsObjects = [];
+                var count = 0;
+                var min = null;
+                var max = 0;
+                filteredData.forEach(element => {
+                    if (deviceIds.indexOf(element.device_id) === -1) {
+                        deviceIds.push(element.device_id);
+                        const obj = {
+                            device_id: element.device_id,
+                            in: 0,
+                            out: 0
+                        }
+                        deviceIdsObjects.push(obj);
+                    }
+                });
+                count = 0;
+                const counts = [];
+                const times = [];
+                if (lesson && dates) {
+                    var start_date;
+                    var end_date;
+                    var selectedStartTime = lesson.value.start_time;
+                    var selectedEndTime = lesson.value.end_time;
+
+                    if (timeRange) {
+                        selectedStartTime = timeRange.value.start_time;
+                        selectedEndTime = timeRange.value.end_time;
+                    }
+
+                    if (date) {
+                        start_date = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${selectedStartTime}`)
+                        end_date = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${selectedEndTime}`)
+                    } else {
+                        start_date = new Date(`${dates[dates.length - 1].year}-${dates[dates.length - 1].month}-${dates[dates.length - 1].day} ${selectedStartTime}`)
+                        end_date = new Date(`${dates[dates.length - 1].year}-${dates[dates.length - 1].month}-${dates[dates.length - 1].day} ${selectedEndTime}`)
+                    }
+                    var tmp_min = false;
+                    var tmp_prev_count = 0;
+                    var tmp_next_count = null;
+                    filteredData.forEach((element) => {
+                        const date = new Date(element.sample_time);
+                        count = count + (element.device_data.diff_in - element.device_data.diff_out);
+
+                        if (date >= start_date && tmp_min === false) {
+                            if (min > tmp_prev_count || min == null) {
+                                min = tmp_prev_count;
+                            }
+
+                            if (max < tmp_prev_count) {
+                                max = tmp_prev_count;
+                            }
+                            tmp_min = true;
+                            const time = correct_time(start_date);
+                            times.push(time);
+                            counts.push(tmp_prev_count);
+                        }
+                        tmp_prev_count = count;
+                    })
+                    count = 0;
+                    tmp_min = false;    //in this case this is tmp max
+                    filteredData.forEach((element) => {
+                        const date = new Date(element.sample_time);
+                        count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                        if (date >= start_date && date <= end_date) {
+                            if (min > count || min == null) {
+                                min = count;
+                            }
+
+                            if (max < count) {
+                                max = count;
+                            }
+                            tmp_next_count = count;
+                            deviceIdsObjects.forEach(obj => {
+                                if (element.device_id === obj.device_id) {
+                                    obj.in = obj.in + element.device_data.diff_in;
+                                    obj.out = obj.out + element.device_data.diff_out;
+                                }
+                            })
+                            const time = correct_time(date);
+                            counts.push(count);
+                            times.push(time);
+                        }
+                    });
+                    counts.push(tmp_next_count);
+                    const time = correct_time(end_date);
+                    times.push(time);
+                } else {
+                    filteredData.forEach(element => {
+                        deviceIdsObjects.forEach(obj => {
+                            if (element.device_id === obj.device_id) {
+                                obj.in = obj.in + element.device_data.diff_in;
+                                obj.out = obj.out + element.device_data.diff_out;
+                            }
+                        })
+                        const date = new Date(element.sample_time);
+                        count = count + (element.device_data.diff_in - element.device_data.diff_out);
+                        if (min > count || min == null) {
+                            min = count;
+                        }
+
+                        if (max < count) {
+                            max = count;
+                        }
+                        counts.push(count);
+                        const time = correct_time(date);
+                        times.push(time);
+                    });
+                    setCurrentCount(counts[(counts.length) - 1]);
+                }
+                setMinCount(min);
+                setMaxCount(max);
+
+                setSeries([{
+                    name: "Count",
+                    data: counts
+                }
+                ])
+                setOptions({
+                    chart: {
+                        height: 350,
+                        type: 'line',
+                        zoom: {
+                            enabled: false
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        curve: 'straight'
+                    },
+                    title: {
+                        text: 'Attendee',
+                        align: 'left'
+                    },
+                    grid: {
+                        row: {
+                            colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
+                            opacity: 0.5
+                        },
+                    },
+                    xaxis: {
+                        categories: times,
+                    }
+                });
+
+                var seriesIns = []
+                var seriesOuts = []
+                var options = []
+
+                deviceIdsObjects.forEach(obj => {
+                    seriesIns.push(obj.in);
+                    seriesOuts.push(obj.out);
+                    options.push(obj.device_id);
+                });
+
+                if (deviceIds.length > 1) {
+                    setPieInSeries(seriesIns)
+                    setPieInOptions({
+                        chart: {
+                            width: 380,
+                            type: 'pie',
+                        },
+                        labels: options,
+                        title: {
+                            text: 'In',
+                            align: 'left'
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                chart: {
+                                    width: 200
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }]
+                    })
+
+                    setPieOutSeries(seriesOuts)
+                    setPieOutOptions({
+                        chart: {
+                            width: 380,
+                            type: 'pie',
+                        },
+                        labels: options,
+                        title: {
+                            text: 'Out',
+                            align: 'left'
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                chart: {
+                                    width: 200
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }]
+                    })
+                } else {
+                    setPieInSeries(null);
+                    setPieInOptions(null);
+                    setPieOutSeries(null);
+                    setPieOutOptions(null);
+                }
             }
         } else {
             setSeries(null);
@@ -533,13 +706,14 @@ function App() {
         }
     }, [filteredData]);
 
+
     return <>
         <div className='container'>
             <div className='navbar-container'>
                 <div className='navbar-item'>
                     <div className="navbar-label"><b>Building</b></div>
                     <Dropdown selected={building && building.label} defaultLabel={""} options={buildingList}
-                        onChange={setBuilding}/>
+                              onChange={setBuilding}/>
                 </div>
                 <div className='navbar-item'>
                     <div className="navbar-label"><b>Room</b></div>
@@ -547,7 +721,8 @@ function App() {
                 </div>
                 <div className='navbar-item'>
                     <div className="navbar-label"><b>Lesson</b></div>
-                    <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList} onChange={setLesson}/>
+                    <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList}
+                              onChange={setLesson}/>
                 </div>
                 <div className='navbar-item'>
                     <div className="navbar-label"><b>Date</b></div>
@@ -560,70 +735,74 @@ function App() {
                 <div className='navbar-item'>
                     {lesson && <div className="navbar-label"><b>Time</b></div>}
                     {lesson &&
-                        <Dropdown selected={timeRange && timeRange.label} defaultLabel={""} options={timeRangeList}
-                        onChange={setTimeRange}/>}
+                    <Dropdown selected={timeRange && timeRange.label} defaultLabel={""} options={timeRangeList}
+                              onChange={setTimeRange}/>}
                 </div>
             </div>
 
-            { (loadingOptions || loadingGraph || loadingTimes) &&
-                <div className='loading-spinner'>
-                    <Spinner animation="border" role="status">
+            {(loadingOptions || loadingGraph || loadingTimes) &&
+            <div className='loading-spinner'>
+                <Spinner animation="border" role="status">
                     <span className="visually-hidden">Loading...</span>
-                    </Spinner>
-                </div>
+                </Spinner>
+            </div>
             }
 
-        <div className="counts">
-            {!date && !lesson && building && currentCount &&
+            <div className="counts">
+                {!date && !lesson && building && currentCount &&
                 <div className="currentCount">
                     <div className="alert alert-success" role="alert">
                         <h4 className="alert-heading">Current attendees</h4>
                         <h1>{currentCount}</h1>
                     </div>
                 </div>
-            }
+                }
 
-            {building && maxCount &&
+                {building && (maxCount || maxCount === 0) &&
                 <div className="currentCount">
                     <div className="alert alert-success" role="alert">
                         <h4 className="alert-heading">Maximum attendees</h4>
                         <h1>{maxCount}</h1>
                     </div>
                 </div>
-            }
+                }
 
-            {building && minCount &&
+                {building && (minCount || minCount === 0) &&
                 <div className="currentCount">
                     <div className="alert alert-success" role="alert">
                         <h4 className="alert-heading">Minimum attendees</h4>
                         <h1>{minCount}</h1>
                     </div>
                 </div>
-            }
-        </div>
-
-        <div className='refresh'>
-            <button className='refresh-button' onClick={updateFilteredData}><FontAwesomeIcon icon={faRefresh} size={"2x"} /></button>
-        </div>
-
-        <div className='graphs'>
-            {series && options &&
-            <div className="graph">
-                <ReactApexChart options={options} series={series} type="line" height={350}/>
-            </div>
-            }
-            <div className="piecharts">
-                {pieInSeries && pieInOptions &&
-                <ReactApexChart options={pieInOptions} series={pieInSeries} type="pie" width={380}/>
-                }
-                {pieOutSeries && pieOutOptions &&
-                <ReactApexChart options={pieOutOptions} series={pieOutSeries} type="pie" width={380}/>
                 }
             </div>
-        </div>
+            {lesson && <div className='timePeriodChange'>
+                <button className='timePeriodChangeButton' onClick={setPeriod}> Month</button>
+                <button className='timePeriodChangeButton' onClick={setPeriod}> Semester</button>
+            </div>}
+            <div className='refresh'>
+                <button className='refresh-button' onClick={updateFilteredData}><FontAwesomeIcon icon={faRefresh}
+                                                                                                 size={"2x"}/></button>
+            </div>
+
+            <div className='graphs'>
+                {series && options &&
+                <div className="graph">
+                    <ReactApexChart options={options} series={series} type="line" height={350}/>
+                </div>
+                }
+                <div className="piecharts">
+                    {pieInSeries && pieInOptions &&
+                    <ReactApexChart options={pieInOptions} series={pieInSeries} type="pie" width={380}/>
+                    }
+                    {pieOutSeries && pieOutOptions &&
+                    <ReactApexChart options={pieOutOptions} series={pieOutSeries} type="pie" width={380}/>
+                    }
+                </div>
+            </div>
 
 
-        {/*series && options && room && !lesson && <div>
+            {/*series && options && room && !lesson && <div>
             <ReactApexChart options={options} series={series} type="line" height={350}/>
             <div className="piecharts">
                 <ReactApexChart options={options} series={series[0].data} type="pie" height={350} width={300}/>
@@ -633,25 +812,25 @@ function App() {
         </div>
 
     */}
-        <div className='buildings'>
+            <div className='buildings'>
 
                 {!building && !room && !lesson &&
-                buildingList.map(building => (
+                actualCount.map(item => (
                     // <div class="col">{building.value}</div>
-                    <div className="building" key={building.value}>
+                    <div className="building" key={item.building}>
                         <div className="card">
                             <img src="https://www.iconpacks.net/icons/1/free-building-icon-1062-thumb.png"
                                  className="card-img-top" alt="..."></img>
                             <div className="card-body">
-                                <h5 className="card-title">{building.value}</h5>
-                                <p className="card-text">There will be number of people inside</p>
+                                <h5 className="card-title">{item.building}</h5>
+                                <p className="card-text">{item.count}</p>
                             </div>
                         </div>
                     </div>
                 ))
                 }
+            </div>
         </div>
-    </div>
     </>
 }
 
