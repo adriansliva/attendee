@@ -255,6 +255,10 @@ div.react-datepicker__input-container {
     font-family: "Helvetica Neue", helvetica, arial, sans-serif;
 }
 
+.timePeriodChangeSmall{
+    display: none;
+}
+
 @media screen and (max-width: 990px) {
     .bar1, .bar2, .bar3 {
         width: 35px;
@@ -355,7 +359,11 @@ div.react-datepicker__input-container {
     }
 
     .options {
-        display: block;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: auto;
+        flex-direction: column;
     }
 
     .card {
@@ -365,6 +373,11 @@ div.react-datepicker__input-container {
     .additionalOptions {
         width: 100%;
     }
-
-    .
+    .timePeriodChange{
+        display: none;
+    }
+    .timePeriodChangeSmall {
+        display: flex;
+        margin-bottom: 1rem;
+    }
 }

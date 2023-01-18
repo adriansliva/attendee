@@ -25,6 +25,7 @@ function App() {
     const [rooms, setRooms] = useState([]);
     const [lessons, setLessons] = useState([]);
     const [allLessons, setAllLessons] = useState([]);
+    const [semesters, setSemesters] = useState([]);
 
     const [dates, setDates] = useState([]);
     const [buildingDates, setBuildingDates] = useState([]);
@@ -64,6 +65,7 @@ function App() {
     const [comparedLessonList, setComparedLessonList] = useState([]);
     const [menu, setMenu] = useState(false);
 
+    const [periodTimeEnd, setPeriodTimeEnd] = useState('');
 
     const getDayId = (day) => {
         switch (day) {
@@ -90,31 +92,32 @@ function App() {
         return `${date.getHours() < 10 ? "0" + date.getHours() : date.getHours()}:${date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes()}:${date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds()}`
     }
 
-    const getBuildings = () => {
+    const getData = () => {
         setLoadingOptions(true);
         fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings`)
             .then((response) => response.json())
             .then((actualData) => setBuildings(actualData));
-    };
 
-    const getLessons = () => {
-        setLoadingOptions(true);
         fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons`)
             .then((response) => response.json())
             .then((actualData) => setAllLessons(actualData));
-    }
 
-    const getActualCountBuildings = () => {
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/semesters`)
+            .then((response) => response.json())
+            .then((actualData) => setSemesters(actualData));
+
         fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings/actual`)
             .then((response) => response.json())
             .then((actualData) => setActualCount(actualData));
     };
 
     useEffect(() => {
-        getBuildings();
-        getLessons();
-        getActualCountBuildings();
+        getData();
     }, []);
+
+    useEffect(() => {
+        console.log(semesters);
+    }, [semesters]);
 
     useEffect(() => {
         if (buildings) {
@@ -238,7 +241,13 @@ function App() {
             var priorDate = new Date(today.setMonth(today.getMonth() - 1));
 
             var dateOfPeriod = priorDate.getFullYear() + '-' + (priorDate.getMonth() + 1) + '-' + priorDate.getDate();
+
+
+            today = new Date();
+            var dateEndOfPeriod = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
             setPeriodTime(dateOfPeriod);
+
+            setPeriodTimeEnd(dateEndOfPeriod);
         }
     }
 
@@ -252,10 +261,35 @@ function App() {
             setSemesterState(true);
             setMonthState(false);
             var today = new Date();
-            var priorDate = new Date(today.setMonth(today.getMonth() - 1));
+            var dateOfStartSemester = null;
+            var dateOfEndSemester = null;
+            var minimum = null;
 
-            var dateOfPeriod = priorDate.getFullYear() + '-' + (priorDate.getMonth() + 1) + '-' + priorDate.getDate();
-            setPeriodTime(dateOfPeriod);
+            semesters.forEach(semester => {
+
+                const tempStartDate = new Date(semester.start_date);
+                const tempEndDate = new Date(semester.end_date);
+
+                console.log(tempStartDate <= today && tempEndDate >= today);
+                console.log("-------");
+                console.log(minimum === null || (today - tempEndDate < minimum && today - tempEndDate > 0));
+                if (tempStartDate <= today && tempEndDate >= today) {
+                    dateOfStartSemester = tempStartDate.getFullYear() + '-' + (tempStartDate.getMonth() + 1) + '-' + tempStartDate.getDate();
+                    dateOfEndSemester = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+                } else {
+                    if ((minimum === null && today - tempEndDate > 0) || (today - tempEndDate < minimum && today - tempEndDate > 0)) {
+                        console.log(today - tempEndDate);
+                        minimum = today - tempEndDate;
+                        dateOfStartSemester = tempStartDate.getFullYear() + '-' + (tempStartDate.getMonth() + 1) + '-' + tempStartDate.getDate();
+                        dateOfEndSemester = tempEndDate.getFullYear() + '-' + (tempEndDate.getMonth() + 1) + '-' + tempEndDate.getDate();
+                    }
+                }
+            })
+            // var priorDate = new Date(today.setMonth(today.getMonth() - 1));
+            //
+            // var dateOfPeriod = priorDate.getFullYear() + '-' + (priorDate.getMonth() + 1) + '-' + priorDate.getDate();
+            setPeriodTime(dateOfStartSemester);
+            setPeriodTimeEnd(dateOfEndSemester);
         }
     }
 
@@ -422,12 +456,13 @@ function App() {
                 .then((actualData) => setFilteredData(actualData));
         } else if (lesson && building && room && dates) {
             if (comparedLesson) {
-                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${getDayId(comparedLesson.value.day)}`)
+                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${periodTimeEnd}/${getDayId(comparedLesson.value.day)}`)
                     .then((response) => response.json())
                     .then((actualData) => setComparedData(actualData));
             }
-            if (periodTime) {
-                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${getDayId(lesson.value.day)}`)
+            if (periodTime && periodTimeEnd) {
+                console.log(periodTimeEnd);
+                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${periodTimeEnd}/${getDayId(lesson.value.day)}`)
                     .then((response) => response.json())
                     .then((actualData) => setFilteredData(actualData));
             } else {
@@ -464,7 +499,8 @@ function App() {
             var tmp_min = false;
             var tmp_prev_count = 0;
             var tmp_next_count = 0;
-            data.forEach((element, index, array) => {
+            data.forEach((element, index) => {
+                tmp_min = false;
                 var dateData = new Date(element.date);
                 start_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedStartTime}`)
                 end_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedEndTime}`)
@@ -498,7 +534,8 @@ function App() {
             var tempIndexElement = 0;
 
             tmp_min = false;    //in this case this is tmp max
-            data.forEach((element, index, array) => {
+            data.forEach((element, index) => {
+                tmp_next_count = 0;
                 var dateData = new Date(element.date);
                 count = 0;
                 start_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedStartTime}`)
@@ -525,6 +562,7 @@ function App() {
                     }
 
                 })
+
                 const time = correct_time(end_date);
                 finalArray[index].device_data.push({
                     time: new Date(`${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()} ${time}`).getTime(),
@@ -557,7 +595,7 @@ function App() {
                     curve: 'straight'
                 },
                 title: {
-                    text: 'Attendee',
+                    text: (lesson && (lesson.value.building + " | " + lesson.value.room + " | " + lesson.value.name)),
                     align: 'left'
                 },
                 grid: {
@@ -696,6 +734,19 @@ function App() {
                     });
                     setCurrentCount(counts[(counts.length) - 1]);
                 }
+
+                var text = '';
+
+                if (building) {
+                    text = text + building.value;
+                    if (room) {
+                        text = text + " | " + room.value;
+                        if (lesson) {
+                            text = text + " | " + lesson.value.name;
+                        }
+                    }
+                }
+
                 setMinCount(min);
                 setMaxCount(max);
 
@@ -719,7 +770,7 @@ function App() {
                         curve: 'straight'
                     },
                     title: {
-                        text: 'Attendee',
+                        text: text,
                         align: 'left'
                     },
                     grid: {
@@ -819,9 +870,9 @@ function App() {
                     </div>
                     <div className='menu-icon-container'>
                         <div className='menu-icon' onClick={() => setMenu(!menu)}>
-                            <div class="bar1"></div>
-                            <div class="bar2"></div>
-                            <div class="bar3"></div>
+                            <div className="bar1"></div>
+                            <div className="bar2"></div>
+                            <div className="bar3"></div>
                         </div>
                     </div>
                 </div>
@@ -894,6 +945,17 @@ function App() {
                                                                                                  size={"2x"}/></button>
             </div>
 
+            {series && options && lesson &&
+            <div className='timePeriodChangeSmall'>
+                <button className={monthState ? 'timePeriodChangeButton active' : 'timePeriodChangeButton'}
+                        onClick={setMonthPeriod}>Month
+                </button>
+                <button className={semesterState ? 'timePeriodChangeButton active' : 'timePeriodChangeButton'}
+                        onClick={setSemesterPeriod}>Semester
+                </button>
+            </div>}
+
+
             <div className='graphs'>
                 {series && options &&
                 <div className="graph">
@@ -965,7 +1027,8 @@ function App() {
                                  className="card-img-top" alt="..."></img>
                             <div className="card-body">
                                 <h5 className="card-title">{item}</h5>
-                                <p className="card-text" style={{fontStyle: "italic"}}>Actual number of people</p>
+                                <p className="card-text" style={{fontStyle: "italic"}}>
+                                    Current number of people</p>
                                 <p className="card-text"
                                    style={{fontSize: "20px"}}>{actualCount.find(building => building.building === item) ? actualCount.find(building => building.building === item).count : 0}</p>
                             </div>
