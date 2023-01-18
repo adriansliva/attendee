@@ -11,7 +11,7 @@ function Dropdown(props) {
     }
 
     return <div className="dropdown-center">
-        <button className="btn btn-secondary dropdown-toggle rounded-0" type="button"
+        <button className={props.time ? "btn btn-outline-primary dropdown-toggle rounded-0" : "btn btn-secondary dropdown-toggle rounded-0"} type="button"
                 onClick={() => setOpen(!open)}>{props.selected ? props.selected : props.defaultLabel}</button>
         {open &&
         <div className="dropdownItemsQ">

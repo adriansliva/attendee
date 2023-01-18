@@ -8,7 +8,6 @@ import moment from "moment";
 import Spinner from 'react-bootstrap/Spinner';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faRefresh} from '@fortawesome/free-solid-svg-icons'
-import {forEach} from "react-bootstrap/ElementChildren";
 
 function App() {
 
@@ -25,12 +24,14 @@ function App() {
     const [buildings, setBuildings] = useState([]);
     const [rooms, setRooms] = useState([]);
     const [lessons, setLessons] = useState([]);
+    const [allLessons, setAllLessons] = useState([]);
 
     const [dates, setDates] = useState([]);
     const [buildingDates, setBuildingDates] = useState([]);
     const [roomDates, setRoomDates] = useState([]);
 
     const [filteredData, setFilteredData] = useState([]);
+    const [comparedData, setComparedData] = useState([]);
 
     const [building, setBuilding] = useState();
     const [room, setRoom] = useState();
@@ -40,6 +41,8 @@ function App() {
 
     const [series, setSeries] = useState();
     const [options, setOptions] = useState();
+    const [seriesCompare, setSeriesCompare] = useState();
+    const [optionsCompare, setOptionsCompare] = useState();
 
     const [pieInSeries, setPieInSeries] = useState();
     const [pieInOptions, setPieInOptions] = useState();
@@ -54,6 +57,12 @@ function App() {
     const [actualCount, setActualCount] = useState([]);
 
     const [periodTime, setPeriodTime] = useState('');
+    const [monthState, setMonthState] = useState(false);
+    const [semesterState, setSemesterState] = useState(false);
+
+    const [comparedLesson, setComparedLesson] = useState();
+    const [comparedLessonList, setComparedLessonList] = useState([]);
+    const [menu, setMenu] = useState(false);
 
 
     const getDayId = (day) => {
@@ -88,6 +97,13 @@ function App() {
             .then((actualData) => setBuildings(actualData));
     };
 
+    const getLessons = () => {
+        setLoadingOptions(true);
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons`)
+            .then((response) => response.json())
+            .then((actualData) => setAllLessons(actualData));
+    }
+
     const getActualCountBuildings = () => {
         fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings/actual`)
             .then((response) => response.json())
@@ -96,6 +112,7 @@ function App() {
 
     useEffect(() => {
         getBuildings();
+        getLessons();
         getActualCountBuildings();
     }, []);
 
@@ -163,9 +180,19 @@ function App() {
                     setRoomDates(actualData)
                 });
             setLoadingOptions(true);
-            fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons/${room.value}`)
+            /*fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lessons/${room.value}`)
                 .then((response) => response.json())
-                .then((actualData) => setLessons(actualData));
+                .then((actualData) => setLessons(actualData));*/
+
+            const lessonsArray = []
+
+            allLessons.forEach(lesson => {
+                if (lesson.room === room.value) {
+                    lessonsArray.push(lesson);
+                }
+            });
+
+            setLessons(lessonsArray);
         }
         setCurrentCount();
     }, [room]);
@@ -198,12 +225,32 @@ function App() {
         return `${addZero(sub.hour())}:${addZero(sub.minute())}-${addZero(plus.hour())}:${addZero(plus.minute())}`;
     }
 
-    const setPeriod = () => {
-        if(periodTime){
+    const setMonthPeriod = () => {
+        if (monthState) {
             setPeriodTime('');
+            setMonthState(false);
             setSeries(null);
             setOptions(null);
-        }else{
+        } else {
+            setMonthState(true);
+            setSemesterState(false);
+            var today = new Date();
+            var priorDate = new Date(today.setMonth(today.getMonth() - 1));
+
+            var dateOfPeriod = priorDate.getFullYear() + '-' + (priorDate.getMonth() + 1) + '-' + priorDate.getDate();
+            setPeriodTime(dateOfPeriod);
+        }
+    }
+
+    const setSemesterPeriod = () => {
+        if (semesterState) {
+            setPeriodTime('');
+            setSemesterState(false);
+            setSeries(null);
+            setOptions(null);
+        } else {
+            setSemesterState(true);
+            setMonthState(false);
             var today = new Date();
             var priorDate = new Date(today.setMonth(today.getMonth() - 1));
 
@@ -272,8 +319,11 @@ function App() {
     }
 
     useEffect(() => {
+        if (!periodTime) {
+            setComparedLesson(null);
+        }
         updateFilteredData();
-    },[periodTime])
+    }, [periodTime])
 
     useEffect(() => {
         if (room) setDates(roomDates);
@@ -285,7 +335,26 @@ function App() {
                     setDates(actualData);
                 });
             timer(lesson.value.start_time, lesson.value.end_time);
+
+            var lessonOptions = []
+
+            allLessons.forEach(item => {
+                if (item.name !== lesson.value.name) {
+                    const option = {
+                        label: `${item.name} ${item.day} ${item.start_time}-${item.end_time}`,
+                        value: item
+                    };
+                    lessonOptions.push(option);
+                }
+            });
+
+            setComparedLessonList(lessonOptions);
+        } else {
+            setPeriodTime('');
+            setSemesterState(false);
+            setMonthState(false);
         }
+        setComparedLesson(null);
         setCurrentCount();
     }, [lesson]);
 
@@ -316,6 +385,22 @@ function App() {
         }
     }, [dates]);
 
+    useEffect(() => {
+        if (comparedLesson) {
+            setTimeRange(null);
+            updateFilteredData();
+        } else {
+            setSeriesCompare(null);
+            setOptionsCompare(null);
+        }
+    }, [comparedLesson]);
+
+    useEffect(() => {
+        if (comparedData) {
+            renderPeriodGraph(comparedData, setSeriesCompare, setOptionsCompare, comparedLesson);
+        }
+    }, [comparedData]);
+
     const updateFilteredData = () => {
         if (!date) {
             var today = new Date();
@@ -336,6 +421,11 @@ function App() {
                 .then((response) => response.json())
                 .then((actualData) => setFilteredData(actualData));
         } else if (lesson && building && room && dates) {
+            if (comparedLesson) {
+                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${getDayId(comparedLesson.value.day)}`)
+                    .then((response) => response.json())
+                    .then((actualData) => setComparedData(actualData));
+            }
             if (periodTime) {
                 fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${getDayId(lesson.value.day)}`)
                     .then((response) => response.json())
@@ -354,7 +444,7 @@ function App() {
         updateFilteredData();
     }, [timeRange]);
 
-    const renderPeriodGraph = (data) => {
+    const renderPeriodGraph = (data, setSeries, setOptions, lesson) => {
         var count = 0;
         var today = new Date();
         if (lesson && dates) {
@@ -373,7 +463,7 @@ function App() {
 
             var tmp_min = false;
             var tmp_prev_count = 0;
-            var tmp_next_count = null;
+            var tmp_next_count = 0;
             data.forEach((element, index, array) => {
                 var dateData = new Date(element.date);
                 start_date = new Date(`${dateData.getFullYear()}-${dateData.getMonth() + 1}-${dateData.getDate()} ${selectedStartTime}`)
@@ -388,14 +478,20 @@ function App() {
                     if (date >= start_date && tmp_min === false) {
                         tmp_min = true;
                         const time = correct_time(start_date);
-                        finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: tmp_prev_count});
+                        finalArray[index].device_data.push({
+                            time: new Date(`${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()} ${time}`).getTime(),
+                            count: tmp_prev_count
+                        });
 
                     }
                     tmp_prev_count = count;
                 })
-                if(finalArray[index].device_data.length === 0){
+                if (finalArray[index].device_data.length === 0) {
                     const time = correct_time(start_date);
-                    finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: 0})
+                    finalArray[index].device_data.push({
+                        time: new Date(`${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()} ${time}`).getTime(),
+                        count: 0
+                    })
                 }
             })
 
@@ -420,14 +516,20 @@ function App() {
                         //     }
                         // })
                         const time = correct_time(date);
-                        finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: count});
+                        finalArray[index].device_data.push({
+                            time: new Date(`${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()} ${time}`).getTime(),
+                            count: count
+                        });
 
                         tempIndexElement = indexElement;
                     }
 
                 })
                 const time = correct_time(end_date);
-                finalArray[index].device_data.push({time: new Date(`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()} ${time}`).getTime(), count: tmp_next_count});
+                finalArray[index].device_data.push({
+                    time: new Date(`${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()} ${time}`).getTime(),
+                    count: tmp_next_count
+                });
             });
 
             var array = [];
@@ -482,7 +584,7 @@ function App() {
         setMaxCount();
         if (filteredData.length !== 0) {
             if (periodTime) {
-                renderPeriodGraph(filteredData);
+                renderPeriodGraph(filteredData, setSeries, setOptions, lesson);
             } else {
                 var deviceIds = [];
                 var deviceIdsObjects = [];
@@ -638,7 +740,7 @@ function App() {
                 deviceIdsObjects.forEach(obj => {
                     seriesIns.push(obj.in);
                     seriesOuts.push(obj.out);
-                    options.push(obj.device_id);
+                    options.push("Door " + obj.device_id);
                 });
 
                 if (deviceIds.length > 1) {
@@ -706,37 +808,47 @@ function App() {
         }
     }, [filteredData]);
 
-
     return <>
         <div className='container'>
-            <div className='navbar-container'>
-                <div className='navbar-item'>
-                    <div className="navbar-label"><b>Building</b></div>
-                    <Dropdown selected={building && building.label} defaultLabel={""} options={buildingList}
-                              onChange={setBuilding}/>
-                </div>
-                <div className='navbar-item'>
-                    <div className="navbar-label"><b>Room</b></div>
-                    <Dropdown selected={room && room.label} defaultLabel={""} options={roomList} onChange={setRoom}/>
-                </div>
-                <div className='navbar-item'>
-                    <div className="navbar-label"><b>Lesson</b></div>
-                    <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList}
-                              onChange={setLesson}/>
-                </div>
-                <div className='navbar-item'>
-                    <div className="navbar-label"><b>Date</b></div>
-                    <div className='date-picker'>
-                        <DatePicker selected={date} onChange={(date) => {
-                            setDate(date);
-                        }} includeDates={dateList}/>
+            <div className={menu ? 'navbar-container-active' : 'navbar-container'}>
+                <div className='navbar-menu'>
+                    <div className='refresh-mobile'>
+                        <button className='refresh-button' onClick={updateFilteredData}><FontAwesomeIcon
+                            icon={faRefresh}
+                            size={"2x"}/></button>
+                    </div>
+                    <div className='menu-icon-container'>
+                        <div className='menu-icon' onClick={() => setMenu(!menu)}>
+                            <div class="bar1"></div>
+                            <div class="bar2"></div>
+                            <div class="bar3"></div>
+                        </div>
                     </div>
                 </div>
-                <div className='navbar-item'>
-                    {lesson && <div className="navbar-label"><b>Time</b></div>}
-                    {lesson &&
-                    <Dropdown selected={timeRange && timeRange.label} defaultLabel={""} options={timeRangeList}
-                              onChange={setTimeRange}/>}
+                <div className='navbar-items'>
+                    <div className='navbar-item'>
+                        <div className="navbar-label"><b>Building</b></div>
+                        <Dropdown selected={building && building.label} defaultLabel={""} options={buildingList}
+                                  onChange={setBuilding}/>
+                    </div>
+                    <div className='navbar-item'>
+                        <div className="navbar-label"><b>Room</b></div>
+                        <Dropdown selected={room && room.label} defaultLabel={""} options={roomList}
+                                  onChange={setRoom}/>
+                    </div>
+                    <div className='navbar-item'>
+                        <div className="navbar-label"><b>Lesson</b></div>
+                        <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList}
+                                  onChange={setLesson}/>
+                    </div>
+                    <div className='navbar-item'>
+                        <div className="navbar-label"><b>Date</b></div>
+                        <div className='date-picker'>
+                            <DatePicker selected={date} onChange={(date) => {
+                                setDate(date);
+                            }} includeDates={dateList}/>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -751,7 +863,7 @@ function App() {
             <div className="counts">
                 {!date && !lesson && building && currentCount &&
                 <div className="currentCount">
-                    <div className="alert alert-success" role="alert">
+                    <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Current attendees</h4>
                         <h1>{currentCount}</h1>
                     </div>
@@ -760,7 +872,7 @@ function App() {
 
                 {building && (maxCount || maxCount === 0) &&
                 <div className="currentCount">
-                    <div className="alert alert-success" role="alert">
+                    <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Maximum attendees</h4>
                         <h1>{maxCount}</h1>
                     </div>
@@ -769,18 +881,15 @@ function App() {
 
                 {building && (minCount || minCount === 0) &&
                 <div className="currentCount">
-                    <div className="alert alert-success" role="alert">
+                    <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Minimum attendees</h4>
                         <h1>{minCount}</h1>
                     </div>
                 </div>
                 }
             </div>
-            {lesson && <div className='timePeriodChange'>
-                <button className='timePeriodChangeButton' onClick={setPeriod}> Month</button>
-                <button className='timePeriodChangeButton' onClick={setPeriod}> Semester</button>
-            </div>}
-            <div className='refresh'>
+
+            <div className='refresh-desktop'>
                 <button className='refresh-button' onClick={updateFilteredData}><FontAwesomeIcon icon={faRefresh}
                                                                                                  size={"2x"}/></button>
             </div>
@@ -791,12 +900,46 @@ function App() {
                     <ReactApexChart options={options} series={series} type="line" height={350}/>
                 </div>
                 }
+                {seriesCompare && optionsCompare &&
+                <div className="graph">
+                    <ReactApexChart options={optionsCompare} series={seriesCompare} type="line" height={350}/>
+                </div>
+                }
+                {series && options && lesson &&
+                <div className='additionalOptions'>
+                    <div className='timePeriodChange'>
+                        <button className={monthState ? 'timePeriodChangeButton active' : 'timePeriodChangeButton'}
+                                onClick={setMonthPeriod}>Month
+                        </button>
+                        <button className={semesterState ? 'timePeriodChangeButton active' : 'timePeriodChangeButton'}
+                                onClick={setSemesterPeriod}>Semester
+                        </button>
+                    </div>
+                    <div className='options'>
+                        {!comparedLesson &&
+                        <div className='options-item'>
+                            {lesson &&
+                            <Dropdown time={true} selected={timeRange && timeRange.label} defaultLabel={"Time range"}
+                                      options={timeRangeList}
+                                      onChange={setTimeRange}/>}
+                        </div>
+                        }
+                        {periodTime &&
+                        <div className='options-item'>
+                            <Dropdown selected={comparedLesson && comparedLesson.label} defaultLabel={"Compare with"}
+                                      options={comparedLessonList}
+                                      onChange={setComparedLesson}/>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
                 <div className="piecharts">
                     {pieInSeries && pieInOptions &&
-                    <ReactApexChart options={pieInOptions} series={pieInSeries} type="pie" width={380}/>
+                    <ReactApexChart className="piechart" options={pieInOptions} series={pieInSeries} type="pie"/>
                     }
                     {pieOutSeries && pieOutOptions &&
-                    <ReactApexChart options={pieOutOptions} series={pieOutSeries} type="pie" width={380}/>
+                    <ReactApexChart className="piechart" options={pieOutOptions} series={pieOutSeries} type="pie"/>
                     }
                 </div>
             </div>
@@ -812,18 +955,19 @@ function App() {
         </div>
 
     */}
-            <div className='buildings'>
-
+            <div className='row'>
                 {!building && !room && !lesson &&
-                actualCount.map(item => (
+                buildings.map(item => (
                     // <div class="col">{building.value}</div>
-                    <div className="building" key={item.building}>
+                    <div className="col-6 col-md-4 building" key={item.building}>
                         <div className="card">
                             <img src="https://www.iconpacks.net/icons/1/free-building-icon-1062-thumb.png"
                                  className="card-img-top" alt="..."></img>
                             <div className="card-body">
-                                <h5 className="card-title">{item.building}</h5>
-                                <p className="card-text">{item.count}</p>
+                                <h5 className="card-title">{item}</h5>
+                                <p className="card-text" style={{fontStyle: "italic"}}>Actual number of people</p>
+                                <p className="card-text"
+                                   style={{fontSize: "20px"}}>{actualCount.find(building => building.building === item) ? actualCount.find(building => building.building === item).count : 0}</p>
                             </div>
                         </div>
                     </div>

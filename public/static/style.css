@@ -49,10 +49,17 @@ li.liNavbarLabels {
     padding: 3%;
     margin-top: 8%;
 }
-.piecharts{
+
+.piecharts {
     display: flex;
     align-content: center;
     justify-content: center;
+    width: 100%;
+    margin: auto;
+}
+
+.piechart {
+    width: 400px;
 }
 
 .dropdownItemsQ {
@@ -61,24 +68,26 @@ li.liNavbarLabels {
     min-width: 230px;
     background-color: white;
 }
-.datePicker{
+
+.datePicker {
     min-width: 230px;
     background-color: #6c757d;
 }
 
-input{
+input {
     background-color: gray;
     text-align: center;
     color: white;
     border: none;
 
 }
-div.react-datepicker__input-container{
+
+div.react-datepicker__input-container {
     display: flex;
     justify-content: center;
 }
 
-.counts{
+.counts {
     width: auto;
     display: flex;
     justify-content: space-between;
@@ -89,21 +98,25 @@ div.react-datepicker__input-container{
     gap: 1rem;
 }
 
-.container{
+.container {
     width: 80%;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-.navbar-container{
+.navbar-container {
+    width: 100%;
+}
+
+.navbar-items {
     display: flex;
     width: 100%;
     justify-content: center;
     align-items: center;
 }
 
-.navbar-label{
+.navbar-label {
     font-size: large;
     min-width: 230px;
     justify-content: center;
@@ -112,18 +125,18 @@ div.react-datepicker__input-container{
     color: white;
 }
 
-.date-picker{
+.date-picker {
     background-color: #6c757d;
     padding-bottom: 0.7rem;
 }
 
-.graphs{
+.graphs {
     width: 100%;
     display: flex;
     flex-direction: column;
 }
 
-.buildings{
+.buildings {
     width: 90%;
     display: flex;
     justify-content: space-between;
@@ -132,30 +145,226 @@ div.react-datepicker__input-container{
     margin-top: 1rem;
 }
 
-.building{
+.building {
     width: 25%;
 }
 
-.refresh{
+.refresh-desktop {
     width: 80%;
     display: flex;
     justify-content: flex-end;
     margin: auto;
     margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
-.refresh-button{
+.refresh-mobile {
+    display: none;
+}
+
+.refresh-button {
     width: 10%;
     border-radius: 5px;
     padding: 0.2rem;
     background-color: white;
-    color: black;
+    color: #0d6efd;
+    border-color: #0d6efd;
+    border-width: 1px;
 }
 
-.loading-spinner{
+.loading-spinner {
     position: absolute;
     top: 50%;
     left: 50%;
     margin-right: -50%;
     transform: translate(-50%, -50%);
+}
+
+.timePeriodChangeButton {
+    padding: 0.3rem;
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 5px;
+    margin-right: 0.2rem;
+    border: none;
+}
+
+.btn-primary, .btn-primary:active {
+    background-color: rgb(148, 178, 255);
+    color: rgb(10, 1, 137);
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.timePeriodChangeButton.active {
+    background-color: rgb(5, 5, 167);
+    color: white;
+}
+
+.additionalOptions {
+    display: flex;
+    margin: auto;
+    justify-content: space-between;
+    width: 80%;
+}
+
+.options-item {
+    width: auto;
+}
+
+.option-label {
+    font-size: large;
+    width: 100%;
+    min-width: 230px;
+    justify-content: center;
+    display: flex;
+    background-color: #6c757d;
+    color: white;
+}
+
+.menu-icon {
+    display: none;
+}
+
+.options {
+    display: flex;
+    gap: 1rem;
+}
+
+.card {
+    width: 75%;
+}
+
+.building {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.timePeriodChangeButton {
+    min-width: 83px;
+}
+
+.card-title {
+    text-align: center;
+}
+
+.card-text {
+    text-align: center;
+    font-size: 1rem;
+    font-family: "Helvetica Neue", helvetica, arial, sans-serif;
+}
+
+@media screen and (max-width: 990px) {
+    .bar1, .bar2, .bar3 {
+        width: 35px;
+        height: 5px;
+        margin: 6px 0;
+        transition: 0.4s;
+        background-color: white;
+    }
+
+    .navbar-menu {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .navbar-container {
+        width: 100%;
+        background-color: #6c757d;
+        align-items: center;
+        justify-content: flex-end;
+        margin-bottom: 2rem;
+    }
+
+    .navbar-item {
+        display: none;
+    }
+
+    .menu-icon-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        padding: 0.8rem 2rem;
+        justify-content: flex-end;
+        margin-top: 6px;
+    }
+
+    .menu-icon {
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .navbar-container-active {
+        width: 100%;
+        background-color: #6c757d;
+        position: relative;
+    }
+
+    .navbar-container-active .navbar-items {
+        flex-direction: column;
+        justify-content: center;
+        background-color: #6c757d;
+        position: absolute;
+        z-index: 100;
+    }
+
+    .navbar-container-active .navbar-item {
+        display: block;
+        width: 100%;
+    }
+
+    .dropdown-center {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dropdownItemsQ {
+        position: relative;
+        z-index: 0;
+        min-width: 230px;
+        background-color: white;
+    }
+
+    .piechart {
+        width: 50%;
+    }
+
+    .refresh {
+        justify-content: flex-start;
+    }
+
+    .refresh-mobile {
+        width: 80%;
+        display: flex;
+        justify-content: flex-start;
+        margin: auto;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .refresh-desktop {
+        display: none;
+    }
+
+    .refresh-button {
+        width: 5rem;
+        margin-left: 1rem;
+    }
+
+    .options {
+        display: block;
+    }
+
+    .card {
+        width: 100%;
+    }
+
+    .additionalOptions {
+        width: 100%;
+    }
+
+    .
 }
