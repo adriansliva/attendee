@@ -483,6 +483,10 @@ function App() {
         var count = 0;
         var today = new Date();
         if (lesson && dates) {
+            setPieOutSeries(null);
+            setPieInSeries(null);
+            setPieOutOptions(null);
+            setPieInOptions(null);
             var start_date;
             var end_date;
             var selectedStartTime = lesson.value.start_time;
