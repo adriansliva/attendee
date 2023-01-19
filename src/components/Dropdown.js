@@ -25,12 +25,6 @@ function Dropdown(props) {
                 onClick={() => setOpen(!open)}>{props.selected ? props.selected : props.defaultLabel}</button>
         </div>
 
-        {/*<button*/}
-        {/*    className={props.time ? "btn btn-outline-primary dropdown-toggle rounded-0" : "btn btn-secondary dropdown-toggle rounded-0"}*/}
-        {/*    type="button"*/}
-        {/*    onClick={() => setOpen(!open)}>{props.selected ? props.selected : props.defaultLabel}*/}
-        {/*</button>*/}
-
         {open &&
         <div className="dropdownItemsQ">
             {props.options.map(option => (

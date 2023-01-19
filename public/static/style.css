@@ -1,3 +1,7 @@
+body{
+    padding-bottom: 2rem;
+}
+
 .dropdownItemQ {
     color: black;
     border-bottom: solid 2px black;
@@ -97,6 +101,17 @@ div.react-datepicker__input-container {
     text-align: center;
     margin-top: 1rem;
     gap: 1rem;
+}
+
+.alert-warning{
+    width: 25%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: large;
 }
 
 .container {
@@ -271,6 +286,10 @@ div.react-datepicker__input-container {
         margin: 6px 0;
         transition: 0.4s;
         background-color: white;
+    }
+
+    .alert-warning {
+        width: 100%;
     }
 
     .navbar-menu {

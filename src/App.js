@@ -456,12 +456,11 @@ function App() {
                 .then((actualData) => setFilteredData(actualData));
         } else if (lesson && building && room && dates) {
             if (comparedLesson) {
-                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${periodTimeEnd}/${getDayId(comparedLesson.value.day)}`)
+                fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${comparedLesson.value.room}/${periodTime}/${periodTimeEnd}/${getDayId(comparedLesson.value.day)}`)
                     .then((response) => response.json())
                     .then((actualData) => setComparedData(actualData));
             }
             if (periodTime && periodTimeEnd) {
-                console.log(periodTimeEnd);
                 fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/period/${room.value}/${periodTime}/${periodTimeEnd}/${getDayId(lesson.value.day)}`)
                     .then((response) => response.json())
                     .then((actualData) => setFilteredData(actualData));
@@ -482,7 +481,7 @@ function App() {
     const renderPeriodGraph = (data, setSeries, setOptions, lesson) => {
         var count = 0;
         var today = new Date();
-        if (lesson && dates) {
+        if (lesson && dates && data.length !== 0) {
             setPieOutSeries(null);
             setPieInSeries(null);
             setPieOutOptions(null);
@@ -617,6 +616,9 @@ function App() {
                     }
                 }
             });
+        } else {
+            setSeries(null);
+            setOptions(null);
         }
     }
 
@@ -749,10 +751,13 @@ function App() {
                             text = text + " | " + lesson.value.name;
                         }
                     }
+                    const today = new Date();
                     if (date) {
                         text = text + " | " + (addZero(date.getDate()) + "-" + addZero(date.getMonth() + 1) + "-" + date.getFullYear())
-                    } else {
+                    } else if (lesson){
                         text = text + " | " + (addZero(dates[dates.length - 1].day) + "-" + addZero(dates[dates.length - 1].month) + "-" + dates[dates.length - 1].year)
+                    } else{
+                        text = text + " | " + (addZero(today.getDate()) + "-" + addZero(today.getMonth() + 1) + "-" + today.getFullYear())
                     }
                 }
 
@@ -998,10 +1003,16 @@ function App() {
                     <ReactApexChart options={options} series={series} type="line" height={350}/>
                 </div>
                 }
+                {(building || room || lesson) && !loadingGraph && filteredData.length === 0 &&
+                <div className="alert alert-warning" role="alert">No data for today</div>
+                }
                 {seriesCompare && optionsCompare &&
                 <div className="graph">
                     <ReactApexChart options={optionsCompare} series={seriesCompare} type="line" height={350}/>
                 </div>
+                }
+                {comparedLesson && !loadingGraph && comparedData.length === 0 &&
+                <div className="alert alert-warning" role="alert">No data for selected lesson</div>
                 }
                 {series && options && lesson &&
                 <div className='additionalOptions'>
