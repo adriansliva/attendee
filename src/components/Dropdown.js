@@ -11,8 +11,26 @@ function Dropdown(props) {
     }
 
     return <div className="dropdown-center">
-        <button className={props.time ? "btn btn-outline-primary dropdown-toggle rounded-0" : "btn btn-secondary dropdown-toggle rounded-0"} type="button"
+        <div className="small-dropdown">
+            <button
+                className={props.time ? "btn btn-outline-primary dropdown-toggle rounded-0" : "btn btn-secondary dropdown-toggle rounded-0"}
+                type="button"
+                style={{width: "100%"}}
+                onClick={() => setOpen(!open)}>{props.selected ? props.defaultLabel + ": " + props.selected : props.defaultLabel}</button>
+        </div>
+        <div className="normal-dropdown">
+            <button
+                className={props.time ? "btn btn-outline-primary dropdown-toggle rounded-0" : "btn btn-secondary dropdown-toggle rounded-0"}
+                type="button"
                 onClick={() => setOpen(!open)}>{props.selected ? props.selected : props.defaultLabel}</button>
+        </div>
+
+        {/*<button*/}
+        {/*    className={props.time ? "btn btn-outline-primary dropdown-toggle rounded-0" : "btn btn-secondary dropdown-toggle rounded-0"}*/}
+        {/*    type="button"*/}
+        {/*    onClick={() => setOpen(!open)}>{props.selected ? props.selected : props.defaultLabel}*/}
+        {/*</button>*/}
+
         {open &&
         <div className="dropdownItemsQ">
             {props.options.map(option => (

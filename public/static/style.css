@@ -3,6 +3,7 @@
     border-bottom: solid 2px black;
     border-right: solid 2px black;
     border-left: solid 2px black;
+    font-family: "Helvetica Neue", helvetica, arial, sans-serif;
     cursor: pointer;
     padding: 5px;
     display: flex;
@@ -259,6 +260,10 @@ div.react-datepicker__input-container {
     display: none;
 }
 
+.small-dropdown{
+    display: none;
+}
+
 @media screen and (max-width: 990px) {
     .bar1, .bar2, .bar3 {
         width: 35px;
@@ -272,6 +277,18 @@ div.react-datepicker__input-container {
         width: 100%;
         display: flex;
         justify-content: space-between;
+    }
+
+    .small-navbar{
+        display: none;
+    }
+
+    .small-dropdown{
+        display: flex;
+    }
+
+    .normal-dropdown{
+        display: none;
     }
 
     .navbar-container {

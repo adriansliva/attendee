@@ -745,6 +745,11 @@ function App() {
                             text = text + " | " + lesson.value.name;
                         }
                     }
+                    if (date) {
+                        text = text + " | " + (addZero(date.getDate()) + "-" + addZero(date.getMonth() + 1) + "-" + date.getFullYear())
+                    } else {
+                        text = text + " | " + (addZero(dates[dates.length - 1].day) + "-" + addZero(dates[dates.length - 1].month) + "-" + dates[dates.length - 1].year)
+                    }
                 }
 
                 setMinCount(min);
@@ -878,19 +883,46 @@ function App() {
                 </div>
                 <div className='navbar-items'>
                     <div className='navbar-item'>
-                        <div className="navbar-label"><b>Building</b></div>
-                        <Dropdown selected={building && building.label} defaultLabel={""} options={buildingList}
-                                  onChange={setBuilding}/>
+                        <div className="small-navbar">
+                            <div className="navbar-label"><b>Building</b></div>
+                        </div>
+                        <div className="small-dropdown">
+                            <Dropdown selected={building && building.label} defaultLabel={"Building"}
+                                      options={buildingList}
+                                      onChange={setBuilding}/>
+                        </div>
+
+                        <div className="normal-dropdown">
+                            <Dropdown selected={building && building.label} defaultLabel={""} options={buildingList}
+                                      onChange={setBuilding}/>
+                        </div>
                     </div>
                     <div className='navbar-item'>
-                        <div className="navbar-label"><b>Room</b></div>
-                        <Dropdown selected={room && room.label} defaultLabel={""} options={roomList}
-                                  onChange={setRoom}/>
+                        <div className="small-navbar">
+                            <div className="navbar-label"><b>Room</b></div>
+                        </div>
+                        <div className="small-dropdown">
+                            <Dropdown selected={room && room.label} defaultLabel={"Room"} options={roomList}
+                                      onChange={setRoom}/>
+                        </div>
+                        <div className="normal-dropdown">
+                            <Dropdown selected={room && room.label} defaultLabel={""} options={roomList}
+                                      onChange={setRoom}/>
+                        </div>
+
                     </div>
                     <div className='navbar-item'>
-                        <div className="navbar-label"><b>Lesson</b></div>
-                        <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList}
-                                  onChange={setLesson}/>
+                        <div className="small-navbar">
+                            <div className="navbar-label"><b>Lesson</b></div>
+                        </div>
+                        <div className="small-dropdown">
+                            <Dropdown selected={lesson && lesson.label} defaultLabel={"Lesson"} options={lessonList}
+                                      onChange={setLesson}/>
+                        </div>
+                        <div className="normal-dropdown">
+                            <Dropdown selected={lesson && lesson.label} defaultLabel={""} options={lessonList}
+                                      onChange={setLesson}/>
+                        </div>
                     </div>
                     <div className='navbar-item'>
                         <div className="navbar-label"><b>Date</b></div>
