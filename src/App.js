@@ -952,9 +952,9 @@ function App() {
             </div>
             }
 
-            <div className="counts">
+            <div className="row count-container">
                 {!date && !lesson && building && currentCount &&
-                <div className="currentCount">
+                <div className="col-6 col-md-4 count">
                     <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Current attendees</h4>
                         <h1>{currentCount}</h1>
@@ -963,7 +963,7 @@ function App() {
                 }
 
                 {building && (maxCount || maxCount === 0) &&
-                <div className="currentCount">
+                <div className="col-6 col-md-4 count">
                     <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Maximum attendees</h4>
                         <h1>{maxCount}</h1>
@@ -972,7 +972,7 @@ function App() {
                 }
 
                 {building && (minCount || minCount === 0) &&
-                <div className="currentCount">
+                <div className="col-6 col-md-4 count">
                     <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Minimum attendees</h4>
                         <h1>{minCount}</h1>

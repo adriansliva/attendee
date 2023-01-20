@@ -123,6 +123,7 @@ div.react-datepicker__input-container {
 
 .navbar-container {
     width: 100%;
+    margin-bottom: 1rem;
 }
 
 .navbar-items {
@@ -257,6 +258,12 @@ div.react-datepicker__input-container {
     margin-bottom: 1rem;
 }
 
+.count-container{
+    width: 80%;
+    margin: auto;
+    align-self: center;
+}
+
 .timePeriodChangeButton {
     min-width: 83px;
 }
@@ -269,6 +276,10 @@ div.react-datepicker__input-container {
     text-align: center;
     font-size: 1rem;
     font-family: "Helvetica Neue", helvetica, arial, sans-serif;
+}
+
+.alert-info{
+    height: 100%;
 }
 
 .timePeriodChangeSmall{
@@ -296,6 +307,10 @@ div.react-datepicker__input-container {
         width: 100%;
         display: flex;
         justify-content: space-between;
+    }
+
+    .count-container{
+        width: auto;
     }
 
     .small-navbar{
@@ -414,6 +429,10 @@ div.react-datepicker__input-container {
     }
     .timePeriodChangeSmall {
         display: flex;
+        margin-bottom: 1rem;
+    }
+
+    .count{
         margin-bottom: 1rem;
     }
 }
