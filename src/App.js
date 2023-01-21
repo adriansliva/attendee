@@ -396,8 +396,11 @@ function App() {
         } else {
             if (room) setDates(roomDates);
             setPeriodTime('');
+            setPeriodTimeEnd('');
             setSemesterState(false);
             setMonthState(false);
+            setSeries(null);
+            setOptions(null);
         }
         setComparedLesson(null);
         setTimeRange();
