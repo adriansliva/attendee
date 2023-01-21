@@ -88,6 +88,13 @@ function App() {
         }
     }
 
+    const refresh_data = () => {
+        updateFilteredData();
+        fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/buildings/actual`)
+            .then((response) => response.json())
+            .then((actualData) => setActualCount(actualData));
+    }
+
     const correct_time = (date) => {
         return `${date.getHours() < 10 ? "0" + date.getHours() : date.getHours()}:${date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes()}:${date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds()}`
     }
@@ -364,7 +371,6 @@ function App() {
     }, [periodTime])
 
     useEffect(() => {
-        if (room) setDates(roomDates);
         if (lesson) {
             setLoadingTimes(true);
             fetch(`https://xhai158pwa.execute-api.eu-central-1.amazonaws.com/Prod/lesson/dates/${room.value}/${getDayId(lesson.value.day)}`)
@@ -388,11 +394,13 @@ function App() {
 
             setComparedLessonList(lessonOptions);
         } else {
+            if (room) setDates(roomDates);
             setPeriodTime('');
             setSemesterState(false);
             setMonthState(false);
         }
         setComparedLesson(null);
+        setTimeRange();
     }, [lesson]);
 
     useEffect(() => {
@@ -755,9 +763,9 @@ function App() {
                     const today = new Date();
                     if (date) {
                         text = text + " | " + (addZero(date.getDate()) + "-" + addZero(date.getMonth() + 1) + "-" + date.getFullYear())
-                    } else if (lesson){
+                    } else if (lesson) {
                         text = text + " | " + (addZero(dates[dates.length - 1].day) + "-" + addZero(dates[dates.length - 1].month) + "-" + dates[dates.length - 1].year)
-                    } else{
+                    } else {
                         text = text + " | " + (addZero(today.getDate()) + "-" + addZero(today.getMonth() + 1) + "-" + today.getFullYear())
                     }
                 }
@@ -983,8 +991,8 @@ function App() {
             </div>
 
             <div className='refresh-desktop'>
-                <button className='refresh-button' onClick={updateFilteredData}><FontAwesomeIcon icon={faRefresh}
-                                                                                                 size={"2x"}/></button>
+                <button className='refresh-button' onClick={refresh_data}><FontAwesomeIcon icon={faRefresh}
+                                                                                           size={"2x"}/></button>
             </div>
 
             {series && options && lesson &&
