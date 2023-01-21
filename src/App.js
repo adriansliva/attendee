@@ -119,6 +119,12 @@ function App() {
         console.log(semesters);
     }, [semesters]);
 
+    const resetCounts = () => {
+        setCurrentCount();
+        setMinCount();
+        setMaxCount();
+    }
+
     useEffect(() => {
         if (buildings) {
             let buildingOptions = []
@@ -152,7 +158,6 @@ function App() {
                     setBuildingDates(actualData)
                 });
         }
-        setCurrentCount();
     }, [building]);
 
     useEffect(() => {
@@ -197,7 +202,6 @@ function App() {
 
             setLessons(lessonsArray);
         }
-        setCurrentCount();
     }, [room]);
 
     useEffect(() => {
@@ -389,12 +393,10 @@ function App() {
             setMonthState(false);
         }
         setComparedLesson(null);
-        setCurrentCount();
     }, [lesson]);
 
     useEffect(() => {
         updateFilteredData();
-        setCurrentCount();
     }, [date]);
 
     useEffect(() => {
@@ -624,8 +626,7 @@ function App() {
 
     useEffect(() => {
         setLoadingGraph(false);
-        setMinCount();
-        setMaxCount();
+        resetCounts();
         if (filteredData.length !== 0) {
             if (periodTime) {
                 renderPeriodGraph(filteredData, setSeries, setOptions, lesson);
@@ -953,15 +954,6 @@ function App() {
             }
 
             <div className="row count-container">
-                {!date && !lesson && building && currentCount &&
-                <div className="col-6 col-md-4 count">
-                    <div className="alert alert-info" role="alert">
-                        <h4 className="alert-heading">Current attendees</h4>
-                        <h1>{currentCount}</h1>
-                    </div>
-                </div>
-                }
-
                 {building && (maxCount || maxCount === 0) &&
                 <div className="col-6 col-md-4 count">
                     <div className="alert alert-info" role="alert">
@@ -976,6 +968,15 @@ function App() {
                     <div className="alert alert-info" role="alert">
                         <h4 className="alert-heading">Minimum attendees</h4>
                         <h1>{minCount}</h1>
+                    </div>
+                </div>
+                }
+
+                {!date && !lesson && building && currentCount &&
+                <div className="col-6 col-md-4 count">
+                    <div className="alert alert-info" role="alert">
+                        <h4 className="alert-heading">Current attendees</h4>
+                        <h1>{currentCount}</h1>
                     </div>
                 </div>
                 }
