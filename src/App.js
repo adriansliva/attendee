@@ -67,6 +67,10 @@ function App() {
 
     const [periodTimeEnd, setPeriodTimeEnd] = useState('');
 
+    const loadingState = () => {
+        return !loadingGraph && !loadingOptions && !loadingTimes
+    }
+
     const getDayId = (day) => {
         switch (day) {
             case "Sunday":
@@ -750,7 +754,9 @@ function App() {
                         const time = correct_time(date);
                         times.push(time);
                     });
-                    setCurrentCount(counts[(counts.length) - 1]);
+                    if(!date){
+                        setCurrentCount(counts[(counts.length) - 1]);
+                    }
                 }
 
                 var text = '';
@@ -964,6 +970,7 @@ function App() {
             </div>
             }
 
+            {series && options &&
             <div className="row count-container">
                 {building && (maxCount || maxCount === 0) &&
                 <div className="col-6 col-md-4 count">
@@ -991,14 +998,14 @@ function App() {
                     </div>
                 </div>
                 }
-            </div>
+            </div>}
 
             <div className='refresh-desktop'>
                 <button className='refresh-button' onClick={refresh_data}><FontAwesomeIcon icon={faRefresh}
                                                                                            size={"2x"}/></button>
             </div>
 
-            {series && options && lesson &&
+            {lesson && ((series && options) || (monthState || semesterState)) &&
             <div className='timePeriodChangeSmall'>
                 <button className={monthState ? 'timePeriodChangeButton active' : 'timePeriodChangeButton'}
                         onClick={setMonthPeriod}>Month
@@ -1015,18 +1022,21 @@ function App() {
                     <ReactApexChart options={options} series={series} type="line" height={350}/>
                 </div>
                 }
-                {(building || room || lesson) && !loadingGraph && filteredData.length === 0 &&
+                {(building || room) && !loadingGraph && filteredData.length === 0 && !lesson &&
                 <div className="alert alert-warning" role="alert">No data for today</div>
+                }
+                {lesson && !loadingGraph && filteredData.length === 0 && (monthState || semesterState) &&
+                <div className="alert alert-warning" role="alert">No data for selected period</div>
                 }
                 {seriesCompare && optionsCompare &&
                 <div className="graph">
                     <ReactApexChart options={optionsCompare} series={seriesCompare} type="line" height={350}/>
                 </div>
                 }
-                {comparedLesson && !loadingGraph && comparedData.length === 0 &&
+                {comparedLesson && !loadingGraph && comparedData.length === 0 && series && options &&
                 <div className="alert alert-warning" role="alert">No data for selected lesson</div>
                 }
-                {series && options && lesson &&
+                {lesson && ((series && options) || (monthState || semesterState)) &&
                 <div className='additionalOptions'>
                     <div className='timePeriodChange'>
                         <button className={monthState ? 'timePeriodChangeButton active' : 'timePeriodChangeButton'}
@@ -1036,6 +1046,7 @@ function App() {
                                 onClick={setSemesterPeriod}>Semester
                         </button>
                     </div>
+                    {series && options && lesson &&
                     <div className='options'>
                         {!comparedLesson &&
                         <div className='options-item'>
@@ -1052,9 +1063,10 @@ function App() {
                                       onChange={setComparedLesson}/>
                         </div>
                         }
-                    </div>
+                    </div>}
                 </div>
                 }
+                {series && options &&
                 <div className="piecharts">
                     {pieInSeries && pieInOptions &&
                     <ReactApexChart className="piechart" options={pieInOptions} series={pieInSeries} type="pie"/>
@@ -1062,7 +1074,7 @@ function App() {
                     {pieOutSeries && pieOutOptions &&
                     <ReactApexChart className="piechart" options={pieOutOptions} series={pieOutSeries} type="pie"/>
                     }
-                </div>
+                </div>}
             </div>
 
 
